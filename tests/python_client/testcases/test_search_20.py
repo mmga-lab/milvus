@@ -1528,7 +1528,7 @@ class TestCollectionSearch(TestcaseBase):
         # filter result with expression in collection
         _vectors = _vectors[0]
         expression = expression.replace("&&", "and").replace("||", "or")
-        filter_ids = []
+        filter_ids = [] 
         for i, _id in enumerate(insert_ids):
             int64 = _vectors.int64[i]
             float = _vectors.float[i]
