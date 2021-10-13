@@ -5,14 +5,10 @@ on:
 
 jobs:
   
-  test-pod-kill-chaos:
+  deploy-chaos-mesh:
    
     runs-on: ubuntu-latest
     timeout-minutes: 30
-    strategy:
-      fail-fast: false
-      matrix:
-        pod: [querynode]
     
     steps:
 
@@ -51,7 +47,17 @@ jobs:
           helm install chaos-mesh chaos-mesh/chaos-mesh --namespace=chaos-testing --version v0.5.3 --set chaosDaemon.runtime=containerd --set chaosDaemon.socketPath=/run/containerd/containerd.sock
           sleep 60s
           kubectl get po -n chaos-testing
-      
+
+  test-pod-kill-chaos:
+    needs: deploy-chaos-mesh
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    strategy:
+      fail-fast: false
+      matrix:
+        pod: [querynode, datanode]
+    
+    steps:      
       - name: Deploy Milvus
         shell: bash
         working-directory: tests/python_client/chaos
