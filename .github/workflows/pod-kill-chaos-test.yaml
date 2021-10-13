@@ -66,6 +66,7 @@ jobs:
           sleep 20s
           # check whether port-forward success
           nc -vz 127.0.0.1 19530
+          # check whether milvus server is healthy
           wget https://raw.githubusercontent.com/milvus-io/pymilvus/v2.0.0rc6/examples/hello_milvus.py
           python hello_milvus.py
       
