@@ -3,8 +3,10 @@ cluster:
 image:
   all:
     repository: milvusdb/milvus-dev
-    tag: master-latest
+    tag: master-20211021-d9abce6
     pullPolicy: IfNotPresent
+service:
+  type: NodePort
 etcd:
   replicaCount: 1
 minio:
