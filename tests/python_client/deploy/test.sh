@@ -163,6 +163,9 @@ then
     python scripts/action_before_upgrade.py || error_exit
 fi
 
+# wait for 30 min
+sleep 1800s
+
 pushd ${Deploy_Dir}
 # uninstall milvus
 printf "start to uninstall milvus\n"
