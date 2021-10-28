@@ -25,7 +25,7 @@ jobs:
         with:
           python-version: 3.8
       - name: Run deploy test
-        timeout-minutes: 15
+        timeout-minutes: 120
         shell: bash
         working-directory: tests/python_client/deploy
         run: |
