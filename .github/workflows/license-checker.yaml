@@ -12,3 +12,4 @@ jobs:
         with:
           log: info
           config: .github/.licenserc.yaml
+          token: ${{ secrets.LICENSE_GITHUB_TOKEN }}
