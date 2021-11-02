@@ -113,13 +113,14 @@ then
     mkdir ${Deploy_Dir}
 fi
 
-echo "get tag info"
+# echo "get tag info"
 
-python scripts/get_tag.py
+# python scripts/get_tag.py
 
-latest_tag=$(jq -r ".latest_tag" tag_info.json)
-latest_rc_tag=$(jq -r ".latest_rc_tag" tag_info.json)
-release_version=$(jq -r ".release_version" tag_info.json)
+# the tag of milvus-dev
+latest_tag="master-20211102-82e5d21"
+latest_rc_tag="2.0.0-rc7-20211011-d567b21"
+release_version="v2.0.0-rc7"
 echo $release_version
 
 pushd ${Deploy_Dir}
