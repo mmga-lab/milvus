@@ -28,7 +28,7 @@ echo "platform: $platform"
 
 Task="reinstall"
 Mode="standalone"
-Release="2.0.0-rc5"
+Release="2.0.0-rc7"
 while getopts "hm:t:p:" OPT;
 do
     case $OPT in
@@ -118,7 +118,7 @@ fi
 # python scripts/get_tag.py
 
 # the tag of milvus-dev
-latest_tag="master-20211102-82e5d21"
+latest_tag="2.0.0-rc8-20211104-d1f4106"
 latest_rc_tag="2.0.0-rc7-20211011-d567b21"
 release_version="v2.0.0-rc7"
 echo $release_version
