@@ -28,7 +28,7 @@ pulsar:
       tag: 2.7.3
     bookkeeper:
       repository: apachepulsar/pulsar
-      pullPolicy IfNotPresent
+      pullPolicy: IfNotPresent
       tag: 2.7.3
     proxy:
       repository: apachepulsar/pulsar
