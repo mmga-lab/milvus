@@ -13,4 +13,6 @@ helm install --wait --timeout 360s ${RELEASE_NAME:-$release} milvus/milvus \
                     --set image.all.repository=${REPOSITORY:-"milvusdb/milvus-dev"} \
                     --set image.all.tag=${IMAGE_TAG:-"master-latest"} \
                     --set ${pod_map[${pod}]}.replicas=$node_num \
+                    --set pulsar.broker.podMonitor.enabled=true \
+                    --set pulsar.proxy.podMonitor.enabled=true \
                     -f ../cluster-values.yaml -n=${ns}
