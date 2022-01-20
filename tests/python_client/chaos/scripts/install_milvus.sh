@@ -5,4 +5,8 @@ bash uninstall_milvus.sh ${release} ${ns}|| true
 
 helm repo add milvus https://milvus-io.github.io/milvus-helm/
 helm repo update
-helm install --wait --timeout 360s ${release} milvus/milvus -f ../cluster-values.yaml --set metrics.serviceMonitor.enabled=true -n=${ns}
+helm install --wait --timeout 720s ${release} milvus/milvus \
+                    --set metrics.serviceMonitor.enabled=true \  
+                    --set pulsar.broker.podMonitor.enabled=true \
+                    --set pulsar.proxy.podMonitor.enabled=true \                    
+                    -f ../cluster-values.yaml -n=${ns}
