@@ -62,7 +62,7 @@ jobs:
           sleep 60s
           # wait all pod running
           kubectl get pods -A
-          kubectl wait --for=condition=Ready pod -l app.kubernetes.io/instance=my-release-minio --timeout=360s
+          kubectl wait --for=condition=Ready pod -l release=my-release-minio --timeout=360s
           kubectl get pods -A
           kubectl wait --for=condition=Ready pod -l app.kubernetes.io/instance=my-release-etcd --timeout=360s
           kubectl get pods -A
