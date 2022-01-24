@@ -52,7 +52,7 @@ jobs:
           #install milvus operator
           kubectl apply -f https://raw.githubusercontent.com/milvus-io/milvus-operator/main/deploy/manifests/deployment.yaml
           sleep 30s
-          kubectl wait --for=condition=Ready pod --all -n milvus-operator --timeout=360s
+          kubectl wait --for=condition=Ready pod -l control-plane=controller-manager -n milvus-operator --timeout=360s
           kubectl get pods -A
           #install milvus cluster
 
