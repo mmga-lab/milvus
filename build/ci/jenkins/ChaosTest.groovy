@@ -209,7 +209,8 @@ pipeline {
                 container('main') {
                     dir ('tests/python_client/chaos') {
                         script {
-                        retry(3) {
+                        sh "sleep 120s"
+                        retry(2) {
                         def host = sh(returnStdout: true, script: "kubectl get svc/${env.RELEASE_NAME}-milvus -o jsonpath=\"{.spec.clusterIP}\"").trim()
                         sh "python3 scripts/hello_milvus.py --host $host"        
                         sh "kubectl get pods|grep ${env.RELEASE_NAME}"
