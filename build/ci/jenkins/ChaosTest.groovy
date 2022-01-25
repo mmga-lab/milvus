@@ -32,7 +32,7 @@ pipeline {
         string(
             description: 'Image Repository',
             name: 'image_repository',
-            defaultValue: 'harbor.zilliz.cc/dockerhub/milvusdb/milvus-dev'
+            defaultValue: 'harbor.zilliz.cc/milvus/milvus'
         )
         string(
             description: 'Image Tag',
