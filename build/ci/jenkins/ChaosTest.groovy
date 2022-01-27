@@ -30,6 +30,16 @@ pipeline {
             choices: ['chaos-test', 'data-consist-test']
         )
         string(
+            description: 'Helm Repository',
+            name: 'helm_repository',
+            defaultValue: 'https://milvus-io.github.io/milvus-helm'
+        )
+        string(
+            description: 'Helm Milvus Version',
+            name: 'helm_milvus_version',
+            defaultValue: '3.0.0'
+        )
+        string(
             description: 'Image Repository',
             name: 'image_repository',
             defaultValue: 'harbor.zilliz.cc/milvus/milvus'
@@ -88,7 +98,7 @@ pipeline {
                             sh "echo ${image_tag_modified}"
                             sh "echo ${params.chaos_type}"
                             sh "docker pull ${params.image_repository}:${image_tag_modified}"
-                            sh "helm repo add milvus https://milvus-io.github.io/milvus-helm"
+                            sh "helm repo add milvus ${params.helm_repository}"
                             sh "helm repo update"
                             if ("${params.pod_name}" == "standalone"){
                                 sh"""
@@ -102,6 +112,7 @@ pipeline {
                                 IMAGE_TAG="${image_tag_modified}" \
                                 REPOSITORY="${params.image_repository}" \
                                 RELEASE_NAME="${env.RELEASE_NAME}" \
+                                HELM_MILVUS_VERSION="${params.helm_milvus_version}" \
                                 bash install_milvus_cluster.sh
                                 """
                             }
