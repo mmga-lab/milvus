@@ -278,6 +278,14 @@ pipeline {
         }
         unstable {
             echo 'I am unstable :/'
+            container('main') {
+                dir ('tests/python_client/chaos/scripts') {
+                    script {
+                        sh "bash uninstall_milvus.sh ${env.RELEASE_NAME} || true"
+                    }
+                }
+            }        
+        
         }
         failure {
             echo 'I failed :('
