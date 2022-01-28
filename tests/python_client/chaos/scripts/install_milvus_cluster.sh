@@ -9,7 +9,7 @@ bash uninstall_milvus.sh ${release} ${ns}|| true
 
 declare -A pod_map=(["querynode"]="queryNode" ["indexnode"]="indexNode" ["datanode"]="dataNode" ["proxy"]="proxy")
 echo "insatll cluster"
-helm install --wait --version==${HELM_MILVUS_VERSION:-"3.0.0"}  --timeout 720s ${RELEASE_NAME:-$release} milvus-dev/milvus \
+helm install --wait --version==${HELM_MILVUS_VERSION:-"3.0.0"}  --timeout 720s ${RELEASE_NAME:-$release} milvus/milvus \
                     --set cluster.enabled=true \
                     --set image.all.repository=${REPOSITORY:-"milvusdb/milvus"} \
                     --set image.all.tag=${IMAGE_TAG:-"master-latest"} \
