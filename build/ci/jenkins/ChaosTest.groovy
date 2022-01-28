@@ -32,12 +32,12 @@ pipeline {
         string(
             description: 'Helm Repository',
             name: 'helm_repository',
-            defaultValue: 'https://milvus-io.github.io/milvus-helm'
+            defaultValue: 'https://charts-dev.zilliz.cc'
         )
         string(
             description: 'Helm Milvus Version',
             name: 'helm_milvus_version',
-            defaultValue: '3.0.0'
+            defaultValue: '2.5.0'
         )
         string(
             description: 'Image Repository',
