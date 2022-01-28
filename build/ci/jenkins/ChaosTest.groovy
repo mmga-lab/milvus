@@ -17,7 +17,7 @@ pipeline {
         choice(
             description: 'Chaos Test Type',
             name: 'chaos_type',
-            choices: ['pod-kill', 'pod-failure']
+            choices: ['pod-kill', 'pod-failure', 'network-partition']
         )
         choice(
             description: 'Chaos Test Target',
