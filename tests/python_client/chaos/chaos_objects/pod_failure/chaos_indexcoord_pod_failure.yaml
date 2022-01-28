@@ -10,7 +10,7 @@ spec:
     labelSelectors:
       app.kubernetes.io/instance: milvus-chaos
       app.kubernetes.io/name: milvus
-      component: proxy
+      component: indexcoord
   mode: fixed
   value: "1"
   action: pod-failure
