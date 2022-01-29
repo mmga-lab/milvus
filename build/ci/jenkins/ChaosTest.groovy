@@ -63,7 +63,7 @@ pipeline {
     
     environment {
         ARTIFACTS = "${env.WORKSPACE}/_artifacts"
-        RELEASE_NAME = "test-${params.pod_name}-${params.chaos_type}-${env.BUILD_ID}"
+        RELEASE_NAME = "${params.pod_name}-${params.chaos_type}-${env.BUILD_ID}"
         NAMESPACE = "chaos-testing"
     }
 
