@@ -2,8 +2,8 @@ cluster:
   enabled: true
 image:
   all:
-    repository: milvusdb/milvus-dev
-    tag: master-latest
+    repository: harbor.zilliz.cc/milvus/milvus
+    tag: master-20220222-ce9662c1
     pullPolicy: IfNotPresent
 
 etcd:
