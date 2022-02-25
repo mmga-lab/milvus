@@ -1,4 +1,4 @@
-name: Pod Kill Chaos Test
+name: IO Latency Chaos Test
 
 on:
   workflow_dispatch:
@@ -6,7 +6,7 @@ on:
     - cron: "30 18 * * *"
 jobs:
   
-  test-pod-kill-chaos:
+  test-io-latency-chaos:
    
     runs-on: ubuntu-latest
     timeout-minutes: 40
@@ -19,7 +19,7 @@ jobs:
 
       - name: Set env param
         run: |
-          echo "RELEASE=test-${{ matrix.pod }}-pod-kill" >> $GITHUB_ENV
+          echo "RELEASE=test-${{ matrix.pod }}-io-latency" >> $GITHUB_ENV
 
       - name: Creating kind cluster
         uses: helm/kind-action@v1.2.0
