@@ -6,7 +6,7 @@ on:
     - cron: "30 18 * * *"
 jobs:
   
-  test-pod-kill-chaos:
+  test-network-latency-chaos:
    
     runs-on: ubuntu-latest
     timeout-minutes: 40
