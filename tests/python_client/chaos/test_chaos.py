@@ -45,8 +45,8 @@ def check_cluster_nodes(chaos_config):
     selector = findkeys(chaos_config, "selector")
     selector = list(selector)
     log.info(f"chaos target selector: {selector}")
-    assert len(selector) == 1
-    selector = selector[0]
+    # assert len(selector) == 1
+    selector = selector[0] # chaos yaml file must place the effected pod selector in the first position
     namespace = selector["namespaces"][0]
     labels_dict = selector["labelSelectors"]
     labels_list = []
@@ -188,6 +188,8 @@ class TestChaos(TestChaosBase):
         chaos_res.create(chaos_config)
         log.info("chaos injected")
         log.info(f"chaos information: {chaos_res.get(meta_name)}")
+        res = chaos_res.list_all()
+        log.info(f"chaos crd list: {res}")
         sleep(constants.WAIT_PER_OP * 2)
         # reset counting
         cc.reset_counting(self.health_checkers)
@@ -212,7 +214,12 @@ class TestChaos(TestChaosBase):
             f.write(record_results(self.health_checkers))
         # delete chaos
         chaos_res.delete(meta_name)
+        # get chaos crd, expect it is deleted
+        res = chaos_res.list_all()
+        log.info(f"chaos crd list: {res}")
         log.info("chaos deleted")
+
+        
         log.info(f'Alive threads: {threading.enumerate()}')
         sleep(2)
         # wait all pods ready

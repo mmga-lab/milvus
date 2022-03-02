@@ -1,0 +1,13 @@
+Collections:
+  -
+    testcase:
+      name: test_datanode_network_latency
+      chaos: chaos_datanode_network_latency.yaml
+      expectation:
+        cluster_1_node:
+          create: fail
+          insert: fail
+          flush: fail
+          index: fail
+          search: fail
+          query: fail
