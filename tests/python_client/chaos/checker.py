@@ -38,6 +38,7 @@ class Checker:
         self._succ = 0
         self._fail = 0
         self.rsp_times = []
+        self.average_time = 0
         self.c_wrap = ApiCollectionWrapper()
         self.c_wrap.init_collection(name=cf.gen_unique_str('Checker_'),
                                     schema=cf.gen_default_collection_schema(),
@@ -69,7 +70,7 @@ class Checker:
         self._succ = 0
         self._fail = 0
         self.rsp_times = []
-        self.average_time = None
+        self.average_time = 0
 
 
 class SearchChecker(Checker):
