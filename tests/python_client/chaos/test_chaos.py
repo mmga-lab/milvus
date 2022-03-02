@@ -59,10 +59,8 @@ def check_cluster_nodes(chaos_config):
 def record_results(checkers):
     res = ""
     for k in checkers.keys():
-        # expect succ if no expectations
-        succ_rate = checkers[k].succ_rate()
-        total = checkers[k].total()
-        res += f"{str(k):10} succ rate: {succ_rate:.2f}  total: {total:02d}\n"
+        check_result = checkers[k].check_result()
+        res += f"{str(k):10} {check_result}\n"
     return res
 
 
