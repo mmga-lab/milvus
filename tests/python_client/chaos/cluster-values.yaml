@@ -2,7 +2,7 @@ cluster:
   enabled: true
 image:
   all:
-    repository: harbor.zilliz.cc/milvus/milvus
+    repository: milvus/milvus-dev
     tag: master-20220302-f1aec49a
     pullPolicy: IfNotPresent
 
