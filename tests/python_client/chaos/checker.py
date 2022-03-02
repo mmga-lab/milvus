@@ -62,8 +62,7 @@ class Checker:
         average_time = None if len(rsp_times) == 0 else sum(rsp_times) / len(rsp_times)
         max_time = None if len(rsp_times) == 0 else max(rsp_times)
         min_time = None if len(rsp_times) == 0 else min(rsp_times)        
-        checkers_result = f"succ_rate: {succ_rate:.2f}, total: {total:03d}, average_time: {average_time:.4f}, \
-                            max_time: {max_time:.4f}, min_time: {min_time:.4f}"
+        checkers_result = f"succ_rate: {succ_rate:.2f}, total: {total:03d}, average_time: {average_time:.4f}, max_time: {max_time:.4f}, min_time: {min_time:.4f}"
         return checkers_result
 
     def reset(self):
