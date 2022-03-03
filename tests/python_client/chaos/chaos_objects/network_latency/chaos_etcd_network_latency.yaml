@@ -13,7 +13,7 @@ spec:
   mode: all
   action: delay
   delay:
-    latency: 2000ms
+    latency: 200ms
     correlation: '100'
     jitter: 0ms
   direction: both
