@@ -173,11 +173,14 @@ class TestChaos(TestChaosBase):
         # assert statistic:all ops 100% succ
         log.info("******1st assert before chaos: ")
         assert_statistic(self.health_checkers)
-        with open(file_name, "a+") as f:
-            ts = time.strftime("%Y-%m-%d %H:%M:%S")
-            f.write(f"{meta_name}-{ts}\n")
-            f.write("1st assert before chaos:\n")
-            f.write(record_results(self.health_checkers))
+        try:
+            with open(file_name, "a+") as f:
+                ts = time.strftime("%Y-%m-%d %H:%M:%S")
+                f.write(f"{meta_name}-{ts}\n")
+                f.write("1st assert before chaos:\n")
+                f.write(record_results(self.health_checkers))
+        except Exception as e:
+            log.error(f"Fail to write to file: {e}")
         # apply chaos object
         chaos_res = CusResource(kind=chaos_config['kind'],
                                 group=constants.CHAOS_GROUP,
@@ -207,9 +210,12 @@ class TestChaos(TestChaosBase):
                                        Op.search: self.expect_search,
                                        Op.query: self.expect_query
                                        })
-        with open(file_name, "a+") as f:
-            f.write("2nd assert after chaos injected:\n")
-            f.write(record_results(self.health_checkers))
+        try:
+            with open(file_name, "a+") as f:
+                f.write("2nd assert after chaos injected:\n")
+                f.write(record_results(self.health_checkers))
+        except Exception as e:
+            log.error(f"Fail to write the report: {e}")
         # delete chaos
         chaos_res.delete(meta_name)
         # get chaos crd, expect it is deleted
@@ -236,9 +242,12 @@ class TestChaos(TestChaosBase):
         # assert statistic: all ops success again
         log.info("******3rd assert after chaos deleted: ")
         assert_statistic(self.health_checkers)
-        with open(file_name, "a+") as f:
-            f.write("3rd assert after chaos deleted:\n")
-            f.write(record_results(self.health_checkers))
+        try:
+            with open(file_name, "a+") as f:
+                f.write("3rd assert after chaos deleted:\n")
+                f.write(record_results(self.health_checkers))
+        except Exception as e:
+            log.error(f"Fail to write the report: {e}")
         # assert all expectations
         assert_expectations()
 
