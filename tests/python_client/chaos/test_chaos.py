@@ -189,7 +189,7 @@ class TestChaos(TestChaosBase):
         chaos_res.create(chaos_config)
         log.info("chaos injected")
         log.info(f"chaos information: {chaos_res.get(meta_name)}")
-        res = chaos_res.list_all()
+        res = chaos_res.get(meta_name)
         log.info(f"chaos crd list: {res}")
         sleep(constants.WAIT_PER_OP * 2)
         # reset counting
@@ -219,7 +219,7 @@ class TestChaos(TestChaosBase):
         # delete chaos
         chaos_res.delete(meta_name)
         # get chaos crd, expect it is deleted
-        res = chaos_res.list_all()
+        res = chaos_res.get(meta_name)
         log.info(f"chaos crd list: {res}")
         log.info("chaos deleted")
 
