@@ -106,6 +106,7 @@ jobs:
         shell: bash
         working-directory: tests/python_client
         run: |
+          kubectl get networkchaos -n chaos-testing
           kubectl get pod -n chaos-testing
           # wait all pod to be ready
           kubectl wait --for=condition=Ready pod -l app.kubernetes.io/instance=${{ env.RELEASE }} -n chaos-testing --timeout=360s
