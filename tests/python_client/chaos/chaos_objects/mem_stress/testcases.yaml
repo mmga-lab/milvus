@@ -59,7 +59,7 @@ Collections:
   -
     testcase:
       name: test_minio_mem_stress
-      chaos: chaos_pulsar_mem_stress.yaml
+      chaos: chaos_minio_mem_stress.yaml
       expectation:
           cluster_1_node:
             flush: fail
@@ -68,7 +68,7 @@ Collections:
   -
     testcase:
       name: test_etcd_mem_stress
-      chaos: chaos_pulsar_mem_stress.yaml
+      chaos: chaos_etcd_mem_stress.yaml
       expectation:
           cluster_1_node:
             flush: fail
