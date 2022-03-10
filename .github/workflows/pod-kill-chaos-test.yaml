@@ -23,7 +23,7 @@ on:
           - 'indexnode'
           - 'proxy'
           - 'pulsar'
-          - 'querycoord'
+          - 'rootcoord'
           - 'querynode'
           - 'querycoord'
           - 'etcd'
