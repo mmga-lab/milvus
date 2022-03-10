@@ -40,7 +40,7 @@ jobs:
     steps:
       - id: set-param
         run: |
-          if [ ${{ github.event.inputs.compontents }} != "all"]; 
+          if [ ${{ github.event.inputs.compontents }} != "all" ]; 
             then matrix=[${{ github.event.inputs.compontents }}]; 
           fi
           if [ ${{ github.event.inputs.compontents }} == "all" ]; 
