@@ -46,6 +46,7 @@ jobs:
           if [ ${{ github.event.inputs.compontents }} == "all" ]; 
             then matrix=[allstandalone, allcluster, standalone, datacoord, datanode, indexcoord, indexnode, proxy, pulsar, querycoord, querynode, rootcoord, etcd, minio];
           fi
+          echo "matrix: ${{ matrix }}"
           echo "::set-output name=matrix::$matrix"
 
   test-pod-kill-chaos:
