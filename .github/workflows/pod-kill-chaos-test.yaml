@@ -57,7 +57,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        pod: ${{ needs.matrix.outputs.matrix }}
+        pod: ${{ needs.set-matrix.outputs.matrix }}
     
     steps:
 
