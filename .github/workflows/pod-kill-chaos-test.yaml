@@ -10,6 +10,7 @@ on:
       compontents:
         description: The components to test
         required: true
+        type: choice
         default: 'all'
         options:
           - 'all'
