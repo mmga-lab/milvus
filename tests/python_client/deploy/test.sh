@@ -118,9 +118,9 @@ echo "get tag info"
 
 python scripts/get_tag.py
 
-latest_tag=$(jq -r ".latest_tag" tag_info.json)
+latest_tag="master-20220223-ce9662c1"
 latest_rc_tag=$(jq -r ".latest_rc_tag" tag_info.json)
-release_version="v2.0.0"
+release_version="v2.0.1"
 echo $release_version
 
 pushd ${Deploy_Dir}
@@ -143,7 +143,7 @@ fi
 if [ "$Task" == "upgrade" ];
 then
     printf "start to deploy previous rc tag milvus\n"
-    replace_image_tag "master-20220125-6336e232" # replace previous rc tag
+    replace_image_tag "master-20220223-ce9662c1" # replace previous rc tag
 
 fi
 cat docker-compose.yml|grep milvusdb
