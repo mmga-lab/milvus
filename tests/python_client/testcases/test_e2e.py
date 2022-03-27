@@ -17,7 +17,7 @@ class TestE2e(TestcaseBase):
         # create
         name = cf.gen_unique_str(prefix)
         t0 = time.time()
-        collection_w = self.init_collection_wrap(name=name)
+        collection_w = self.init_collection_wrap(name=name, active_trace=True)
         tt = time.time() - t0
         assert collection_w.name == name
         entities = collection_w.num_entities
