@@ -1,6 +1,7 @@
 import time
 from datetime import datetime
 import functools
+from utils.util_log import test_log as log
 
 DEFAULT_FMT = '[{start_time}][{end_time}][{elapsed:0.8f}s] {collection_name} {name} ({arg_str}) -> {result!r}'
 
@@ -22,7 +23,9 @@ def trace(fmt=DEFAULT_FMT, prefix='test', flag=True):
                 arg_str = ', '.join(arg_lst)[:200]
                 
                 log_str = f"[{prefix}]" + fmt.format(**locals())
-                print(log_str) # TODO: add report function in this place, like uploading to influxdb
+                # TODO: add report function in this place, like uploading to influxdb
+                # it is better a async way to do this, in case of blocking the request processing
+                log.info(log_str)
                 return result
             else:
                 result = func(*args, **kwargs)
