@@ -34,13 +34,15 @@ class Checker:
        b. count operations and success rate
     """
 
-    def __init__(self):
+    def __init__(self,collection_name=ct.gen_unique_str("Checker_")):
         self._succ = 0
         self._fail = 0
+        self._running = True
+        self.collection_name = collection_name
         self.rsp_times = []
         self.average_time = 0
         self.c_wrap = ApiCollectionWrapper()
-        self.c_wrap.init_collection(name=cf.gen_unique_str('Checker_'),
+        self.c_wrap.init_collection(name=collection_name,
                                     schema=cf.gen_default_collection_schema(),
                                     timeout=timeout,
                                     enable_traceback=enable_traceback)
@@ -71,6 +73,8 @@ class Checker:
         self.rsp_times = []
         self.average_time = 0
 
+    def terminate(self):
+        self._running = False
 
 class SearchChecker(Checker):
     """check search operations in a dependent thread"""
@@ -80,7 +84,7 @@ class SearchChecker(Checker):
         self.c_wrap.load(enable_traceback=enable_traceback)  # do load before search
 
     def keep_running(self):
-        while True:
+        while self._running:
             search_vec = cf.gen_vectors(5, ct.default_dim)
             t0 = time.time()
             _, result = self.c_wrap.search(
@@ -111,7 +115,7 @@ class InsertFlushChecker(Checker):
         self.initial_entities = self.c_wrap.num_entities
 
     def keep_running(self):
-        while True:
+        while self._running:
             t0 = time.time()
             _, insert_result = \
                 self.c_wrap.insert(data=cf.gen_default_list_data(nb=constants.DELTA_PER_INS),
@@ -150,7 +154,7 @@ class CreateChecker(Checker):
         super().__init__()
 
     def keep_running(self):
-        while True:
+        while self._running:
             t0 = time.time()
             _, result = self.c_wrap.init_collection(
                 name=cf.gen_unique_str("CreateChecker_"),
@@ -181,7 +185,7 @@ class IndexChecker(Checker):
         log.debug(f"Index ready entities: {self.c_wrap.num_entities}")  # do as a flush before indexing
 
     def keep_running(self):
-        while True:
+        while self._running:
             t0 = time.time()
             _, result = self.c_wrap.create_index(ct.default_float_vec_field_name,
                                                  constants.DEFAULT_INDEX_PARAM,
@@ -208,7 +212,7 @@ class QueryChecker(Checker):
         self.c_wrap.load(enable_traceback=enable_traceback)  # load before query
 
     def keep_running(self):
-        while True:
+        while self._running:
             int_values = []
             for _ in range(5):
                 int_values.append(randint(0, constants.ENTITIES_FOR_SEARCH))
