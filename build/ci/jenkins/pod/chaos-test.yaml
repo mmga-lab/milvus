@@ -8,7 +8,7 @@ spec:
   enableServiceLinks: false
   containers:
   - name: main
-    image: harbor.zilliz.cc/test/krte:dev-1
+    image: harbor.zilliz.cc/test/krte:dev-3
     securityContext:
       privileged: true
     tty: true
