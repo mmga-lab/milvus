@@ -84,6 +84,7 @@ pipeline {
                     dir ('tests/python_client') {
                         script {
                         sh "pip install -r requirements.txt --trusted-host https://test.pypi.org"       
+                        sh "apt-get install -y --no-install-recommends wget"
                         }
                     }
                 }
