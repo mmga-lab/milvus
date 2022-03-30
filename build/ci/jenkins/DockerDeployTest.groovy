@@ -29,6 +29,11 @@ pipeline {
             choices: ['reinstall', 'upgrade']
         )
         string(
+            description: 'Release Version',
+            name: 'release_version',
+            defaultValue: 'v2.0.1'
+        )        
+        string(
             description: 'Old Image Repository',
             name: 'old_image_repository',
             defaultValue: 'milvusdb/milvus'
@@ -90,7 +95,7 @@ pipeline {
             }
             steps {
                 container('main') {
-                    dir ('tests/python_client/deploy/{params.milvus_mode}') {
+                    dir ("tests/python_client/deploy/${params.milvus_mode}") {
                         script {
                             def old_image_tag_modified = ""
                             def new_image_tag_modified = ""
@@ -131,6 +136,16 @@ pipeline {
                             }
                             else {
                                 old_image_repository_modified = "${params.old_image_repository}"
+                            }
+
+                            // download docker-compose.yaml
+                            if ("${params.deploy_task}" == "reinstall"){
+                                echo "download docker-compose.yaml from master branch"
+                                sh "wget https://raw.githubusercontent.com/milvus-io/milvus/master/deployments/docker/${params.milvus_mode}/docker-compose.yml -O docker-compose.yml"  
+                            }
+                            else {
+                                echo "download docker-compose.yaml from release branch"
+                                sh "wget https://github.com/milvus-io/milvus/releases/download/${params.release_version}/milvus-${params.milvus_mode}-docker-compose.yml -O docker-compose.yml"                                 
                             }
 
                             // deploy milvus
