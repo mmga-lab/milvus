@@ -148,8 +148,7 @@ pipeline {
                                 sh "wget https://github.com/milvus-io/milvus/releases/download/${params.release_version}/milvus-${params.milvus_mode}-docker-compose.yml -O docker-compose.yml"                                 
                             }
                             sh"""
-                            #!/bin/bash
-                            source ../common_functions.sh \
+                            bash source ../common_functions.sh \
                             && check_healthy
                             """
                             // deploy milvus
