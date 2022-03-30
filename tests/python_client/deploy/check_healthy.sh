@@ -2,6 +2,8 @@
 
 #to check containers all running and minio is healthy
 function check_healthy {
+    Expect=$(grep "container_name" docker-compose.yml | wc -l)
+    Expect_health=$(grep "healthcheck" docker-compose.yml | wc -l)
     cnt=$(docker-compose ps | grep -E "running|Running|Up|up" | wc -l)
     healthy=$(docker-compose ps | grep "healthy" | wc -l)
     time_cnt=0
