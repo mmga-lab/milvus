@@ -147,7 +147,11 @@ pipeline {
                                 echo "download docker-compose.yaml from release branch"
                                 sh "wget https://github.com/milvus-io/milvus/releases/download/${params.release_version}/milvus-${params.milvus_mode}-docker-compose.yml -O docker-compose.yml"                                 
                             }
-
+                            sh"""
+                            #!/bin/bash
+                            source ../common_functions.sh \
+                            && check_healthy
+                            """
                             // deploy milvus
                             sh"""
                             MILVUS_IMAGE="${old_image_repository_modified}:${old_image_tag_modified}" \
@@ -156,6 +160,7 @@ pipeline {
 
                             // wait for milvus ready
                             sh"""
+                            #!/bin/bash
                             source ../common_functions.sh \
                             && check_healthy
                             """
