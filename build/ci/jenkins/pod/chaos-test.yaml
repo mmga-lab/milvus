@@ -8,7 +8,7 @@ spec:
   enableServiceLinks: false
   containers:
   - name: main
-    image: registry.milvus.io/test/krte:dev-1
+    image: registry.milvus.io/test/krte:dev-2
     securityContext:
       privileged: true
     tty: true
