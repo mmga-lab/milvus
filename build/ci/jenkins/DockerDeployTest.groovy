@@ -124,8 +124,8 @@ pipeline {
                             sh "echo ${new_image_tag_modified} > new_image_tag_modified.txt"
                             stash includes: 'new_image_tag_modified.txt', name: 'new_image_tag_modified'
                             env.new_image_tag_modified = new_image_tag_modified
-                            // sh "docker pull ${params.old_image_repository}:${old_image_tag_modified}"
-                            // sh "docker pull ${params.new_image_repository}:${new_image_tag_modified}"
+                            sh "docker pull ${params.old_image_repository}:${old_image_tag_modified}"
+                            sh "docker pull ${params.new_image_repository}:${new_image_tag_modified}"
                             if ("${params.deploy_task}" == "reinstall"){
                                 echo "reinstall Milvus with new image tag"
                                 old_image_tag_modified = new_image_tag_modified
@@ -147,25 +147,15 @@ pipeline {
                                 echo "download docker-compose.yaml from release branch"
                                 sh "wget https://github.com/milvus-io/milvus/releases/download/${params.release_version}/milvus-${params.milvus_mode}-docker-compose.yml -O docker-compose.yml"                                 
                             }
-                            sh"""
-                            bash source ../common_functions.sh \
-                            && check_healthy
-                            """
+
                             // deploy milvus
                             sh"""
                             MILVUS_IMAGE="${old_image_repository_modified}:${old_image_tag_modified}" \
                             docker-compose up -d
                             """
-
+                            sleep(30)
                             // wait for milvus ready
-                            sh"""
-                            #!/bin/bash
-                            source ../common_functions.sh \
-                            && check_healthy
-                            """
-
-
-
+                            sh "bash ../check_healthy.sh"
 
                         }
                     }
@@ -216,10 +206,8 @@ pipeline {
                     dir ('tests/python_client/deploy${params.milvus_mode}') {
                         script {
                             sh "docker-compose restart"
-                            sh"""
-                            source ../common_functions.sh \
-                            && check_healthy
-                            """
+                            sleep(30)
+                            sh "bash ../check_healthy.sh"
                         }
                     }
                 }
@@ -254,10 +242,8 @@ pipeline {
                             docker-compose up -d
                             """
                             // wait for milvus ready
-                            sh"""
-                            source ../common_functions.sh \
-                            && check_healthy
-                            """
+                            sleep(30)
+                            sh "bash ../check_healthy.sh"
                         }
                     }
                 }

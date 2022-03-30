@@ -1,17 +1,4 @@
-
-function replace_image_tag {
-    image_repo=$1
-    image_tag=$2
-    if [ "$platform" == "Mac" ];
-    then
-        # for mac os
-        sed -i "" "s/milvusdb\/milvus.*/${image_repo}\:${image_tag}/g" docker-compose.yml   
-    else
-        #for linux os 
-        sed -i "s/milvusdb\/milvus.*/${image_repo}\:${image_tag}/g" docker-compose.yml
-    fi
-
-}
+#!/bin/bash
 
 #to check containers all running and minio is healthy
 function check_healthy {
@@ -37,3 +24,5 @@ function check_healthy {
     echo "healthy num $healthy expect num $Expect_health"
     done
 }
+
+check_healthy
