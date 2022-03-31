@@ -156,7 +156,7 @@ pipeline {
                             MILVUS_IMAGE="${old_image_repository_modified}:${old_image_tag_modified}" \
                             docker-compose up -d
                             """
-                            sleep(6000)
+                            sleep(30)
                             // wait for milvus ready
                             sh "bash ../check_healthy.sh"
 
@@ -291,7 +291,7 @@ pipeline {
         always {
             echo 'upload logs'
             container('main') {
-                dir ("tests/python_client/deploy/${param.milvus_mode}") {
+                dir ("tests/python_client/deploy/${params.milvus_mode}") {
                     script {
                         echo "get pod status"
                         sh "docker-compose ps -a || true"
@@ -312,7 +312,7 @@ pipeline {
         success {
             echo 'I succeeeded!'
             container('main') {
-                dir ("tests/python_client/deploy/${param.milvus_mode}") {
+                dir ("tests/python_client/deploy/${params.milvus_mode}") {
                     script {
                         sh "docker-compose down || true"
                         sh "rm -rf volumes || true"
