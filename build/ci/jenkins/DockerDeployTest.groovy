@@ -16,7 +16,7 @@ pipeline {
         choice(
             description: 'Choose tools to deploy Milvus',
             name: 'deploy_tool',
-            choices: ['helm']
+            choices: ['docker-compose']
         )
         choice(
             description: 'Milvus Mode',
@@ -303,6 +303,7 @@ pipeline {
                         archiveArtifacts artifacts: "artifacts-${param.milvus_mode}-${param.deploy_task}-logs.tar.gz", allowEmptyArchive: true
                         if ("${params.keep_env}" == "false"){
                             sh "docker-compose down || true"
+                            sh "rm -rf volumes || true"
                         }
                     }
                 }
@@ -314,6 +315,7 @@ pipeline {
                 dir ("tests/python_client/deploy/${param.milvus_mode}") {
                     script {
                         sh "docker-compose down || true"
+                        sh "rm -rf volumes || true"
                     }
                 }
             }  
