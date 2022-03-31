@@ -154,6 +154,7 @@ pipeline {
                             // deploy milvus
                             sh"""
                             MILVUS_IMAGE="${old_image_repository_modified}:${old_image_tag_modified}" \
+                            DOCKER_VOLUME_DIRECTORY="${pwd}" \
                             docker-compose up -d
                             """
                             sleep(30)
@@ -253,6 +254,7 @@ pipeline {
                             // deploy milvus
                             sh"""
                             MILVUS_IMAGE="${new_image_repository_modified}:${new_image_tag_modified}" \
+                            DOCKER_VOLUME_DIRECTORY="${pwd}" \
                             docker-compose up -d
                             """
                             // wait for milvus ready
