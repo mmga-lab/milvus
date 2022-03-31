@@ -2,6 +2,32 @@ name: Deploy Test
 
 on:
   workflow_dispatch:
+    inputs:
+      old_image_repo:
+        description: The image repository name to use for the deploy test
+        required: true
+        default: 'milvusdb/milvus'      
+
+      old_image_tag:
+        description: The old image tag to use for the deploy test
+        required: true
+        default: 'latest'
+
+      previous_release_version:
+        description: The previous release version to use for the deploy test
+        required: true
+        default: 'v2.0.1'
+
+      new_image_repo:
+        description: The image repository name to use for the deploy test
+        required: true
+        default: 'milvusdb/milvus-dev'
+
+      new_image_tag:
+        description: The new image tag to use for the deploy test
+        required: true
+        default: 'master-latest'
+
   schedule:
     # * is a special character in YAML so you have to quote this string
     #         ┌───────────── minute (0 - 59)
@@ -22,11 +48,24 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        mode: [standalone,cluster]
-        task: [reinstall,upgrade]
+        mode: [cluster]
+        task: [upgrade]
 
     steps:
-
+      - name: Set env param
+        env:
+          DEFAULT_OLD_IMAGE_REPO: "milvusdb/milvus"
+          DEFAULT_OLD_IMAGE_TAG: "latest"
+          DEFAULT_PREVIOUS_RELEASE_VERSION: "v2.0.1"
+          DEFAULT_NEW_IMAGE_REPO: "milvusdb/milvus-dev"
+          DEFAULT_NEW_IMAGE_TAG: "master-latest"
+        run: |
+          echo "OLD_IMAGE_REPO=${{ github.event.inputs.old_image_repo || env.DEFAULT_OLD_IMAGE_REPO }}" >> $GITHUB_ENV
+          echo "OLD_IMAGE_TAG=${{ github.event.inputs.old_image_tag || env.DEFAULT_OLD_IMAGE_TAG }}" >> $GITHUB_ENV
+          echo "PREVIOUS_RELEASE_VERSION=${{ github.event.inputs.previous_release_version || env.DEFAULT_PREVIOUS_RELEASE_VERSION }}" >> $GITHUB_ENV
+          echo "NEW_IMAGE_REPO=${{ github.event.inputs.new_image_repo || env.DEFAULT_NEW_IMAGE_REPO }}" >> $GITHUB_ENV
+          echo "NEW_IMAGE_TAG=${{ github.event.inputs.new_image_tag || env.DEFAULT_NEW_IMAGE_TAG }}" >> $GITHUB_ENV
+      
       - uses: actions/checkout@v2
 
       - name: Set up Python
@@ -36,21 +75,83 @@ jobs:
       
       - name: Install dependency
         shell: bash
-        working-directory: tests/python_client/deploy
+        working-directory: tests/python_client
         run: |
-          pip install -r requirements.txt
-          # update pymilvus to latest version
-          pip install -i https://test.pypi.org/simple/ pymilvus==2.0.0rc10.dev2
+          pip install -r requirements.txt --trusted-host https://test.pypi.org
+
       
-      - name: Run deploy test
+      - name: First Milvus deployment
         timeout-minutes: 60
         shell: bash
-        working-directory: tests/python_client/deploy
+        working-directory: tests/python_client/deploy/${{ matrix.mode }}
         run: |
-          mkdir -p ${{ matrix.mode }}/logs
-          echo "test -m ${{ matrix.mode }} -t ${{ matrix.task }}" > ./${{ matrix.mode }}/logs/test_info.log
-          python scripts/get_tag.py >> ./${{ matrix.mode }}/logs/test_info.log
-          bash test.sh -m ${{ matrix.mode }} -t ${{ matrix.task }} -p ""
+          if [ ${{ matrix.task }} == "reinstall" ]; then  
+            wget wget https://raw.githubusercontent.com/milvus-io/milvus/master/deployments/docker/${{ matrix.mode }}/docker-compose.yml -O docker-compose.yml;
+            MILVUS_IMAGE="${{ env.NEW_IMAGE_REPO }}:${{ env.NEW_IMAGE_TAG }}";
+            
+          fi
+
+          if [ ${{ matrix.task }} == "upgrade" ]; then
+            wget https://github.com/milvus-io/milvus/releases/download/${{ env.PREVIOUS_RELEASE_VERSION }}/milvus-${params.milvus_mode}-docker-compose.yml -O docker-compose.yml;
+            MILVUS_IMAGE="${{ env.OLD_IMAGE_REPO }}:${{ env.OLD_IMAGE_TAG }}";
+          fi
+
+          docker-compose up -d
+
+          bash ../check_healthy.sh
+
+      - name: Run first test
+        timeout-minutes: 60
+        shell: bash
+        working-directory: tests/python_client/deploy/scripts
+        run: |
+          if [ ${{ matrix.task }} == "reinstall" ]; then  
+            python3 action_before_reinstall.py
+          fi
+
+          if [ ${{ matrix.task }} == "upgrade" ]; then
+            python3 action_before_upgrade.py
+          fi
+
+      - name: Second Milvus deployment
+        timeout-minutes: 60
+        shell: bash
+        working-directory: tests/python_client/deploy/${{ matrix.mode }}
+        run: |
+          if [ ${{ matrix.task }} == "reinstall" ]; then
+            docker-compose restart    
+          fi
+
+          if [ ${{ matrix.task }} == "upgrade" ]; then
+            MILVUS_IMAGE="${{ env.NEW_IMAGE_REPO }}:${{ env.NEW_IMAGE_TAG }}";
+            docker-compose up -d  
+          fi
+
+          bash ../check_healthy.sh
+
+
+      - name: Run second test
+        timeout-minutes: 60
+        shell: bash
+        working-directory: tests/python_client/deploy/scripts
+        run: |
+          if [ ${{ matrix.task }} == "reinstall" ]; then  
+            python3 action_after_reinstall.py
+          fi
+
+          if [ ${{ matrix.task }} == "upgrade" ]; then
+            python3 action_after_upgrade.py
+          fi
+
+      - name: Export logs
+        if: ${{ always() }}
+        shell: bash
+        working-directory: tests/python_client/deploy/${{ matrix.mode }}
+        run: |
+          docker-compose ps -a || true
+          mkdir -p logs
+          docker-compose logs > ./logs/test-${{ matrix.mode }}-${{ matrix.task }}.log 2>&1 || echo "export logs failed"
+
 
       - name: 'Send mail'
         if: ${{ failure() }}
@@ -72,129 +173,129 @@ jobs:
           name: docker-compose-logs-${{ matrix.mode }}-${{ matrix.task }}
           path: tests/python_client/deploy/${{ matrix.mode }}/logs
 
-  test-helm-install:
-    runs-on: ubuntu-latest
-    strategy:
-      fail-fast: false
-      matrix:
-        mode: [standalone,cluster]
-        task: [reinstall,upgrade]    
-    steps:
+  # test-helm-install:
+  #   runs-on: ubuntu-latest
+  #   strategy:
+  #     fail-fast: false
+  #     matrix:
+  #       mode: [standalone,cluster]
+  #       task: [reinstall,upgrade]    
+  #   steps:
       
-      - name: Creating kind cluster
-        uses: helm/kind-action@v1.2.0
+  #     - name: Creating kind cluster
+  #       uses: helm/kind-action@v1.2.0
       
-      - name: Print cluster information
-        run: |
-          kubectl config view
-          kubectl cluster-info
-          kubectl get nodes
-          kubectl get pods -n kube-system
-          helm version
-          kubectl version
+  #     - name: Print cluster information
+  #       run: |
+  #         kubectl config view
+  #         kubectl cluster-info
+  #         kubectl get nodes
+  #         kubectl get pods -n kube-system
+  #         helm version
+  #         kubectl version
 
-      - uses: actions/checkout@v2
+  #     - uses: actions/checkout@v2
 
-      - name: Set up Python
-        uses: actions/setup-python@v2
-        with:
-          python-version: 3.8
+  #     - name: Set up Python
+  #       uses: actions/setup-python@v2
+  #       with:
+  #         python-version: 3.8
 
-      - name: Install dependency
-        shell: bash
-        working-directory: tests/python_client/deploy
-        run: |
-          pip install -r requirements.txt
-          # update pymilvus to latest version
-          pip install -i https://test.pypi.org/simple/ pymilvus==2.0.0rc10.dev2         
+  #     - name: Install dependency
+  #       shell: bash
+  #       working-directory: tests/python_client/deploy
+  #       run: |
+  #         pip install -r requirements.txt
+  #         # update pymilvus to latest version
+  #         pip install -i https://test.pypi.org/simple/ pymilvus==2.0.0rc10.dev2         
       
-      - name: First Milvus Deployment
-        timeout-minutes: 60
-        shell: bash
-        working-directory: tests/python_client/deploy     
-        run: |
-          helm repo add milvus https://milvus-io.github.io/milvus-helm
-          helm repo update
+  #     - name: First Milvus Deployment
+  #       timeout-minutes: 60
+  #       shell: bash
+  #       working-directory: tests/python_client/deploy     
+  #       run: |
+  #         helm repo add milvus https://milvus-io.github.io/milvus-helm
+  #         helm repo update
 
-          # if the task is reinstall, install milvus with latest image in repo milvusdb/milvus-dev
-          # for cluster mode
-          if [ ${{ matrix.task }} == "reinstall" ] && [ ${{ matrix.mode }} == "cluster" ]; then
-              echo "task: ${{ matrix.task }} mode: ${{ matrix.mode }}";
-              helm install --wait --timeout 720s deploy-testing milvus/milvus -f cluster-values.yaml;
-          fi
-          # for standalone mode
-          if [ ${{ matrix.task }} == "reinstall" ] && [ ${{ matrix.mode }} == "standalone" ]; then
-              echo "task: ${{ matrix.task }} mode: ${{ matrix.mode }}";
-              helm install --wait --timeout 720s deploy-testing milvus/milvus -f standalone-values.yaml;
-          fi
+  #         # if the task is reinstall, install milvus with latest image in repo milvusdb/milvus-dev
+  #         # for cluster mode
+  #         if [ ${{ matrix.task }} == "reinstall" ] && [ ${{ matrix.mode }} == "cluster" ]; then
+  #             echo "task: ${{ matrix.task }} mode: ${{ matrix.mode }}";
+  #             helm install --wait --timeout 720s deploy-testing milvus/milvus -f cluster-values.yaml;
+  #         fi
+  #         # for standalone mode
+  #         if [ ${{ matrix.task }} == "reinstall" ] && [ ${{ matrix.mode }} == "standalone" ]; then
+  #             echo "task: ${{ matrix.task }} mode: ${{ matrix.mode }}";
+  #             helm install --wait --timeout 720s deploy-testing milvus/milvus -f standalone-values.yaml;
+  #         fi
 
-          # if the task is upgrade, install milvus with latest rc image in repo milvusdb/milvus
-          if [ ${{ matrix.task }} == "upgrade" ] && [ ${{ matrix.mode }} == "cluster" ]; then
-              echo "task: ${{ matrix.task }} mode: ${{ matrix.mode }}";
-              helm install --wait --timeout 720s deploy-testing milvus/milvus --set image.all.tag=master-20220125-6336e232 -f cluster-values.yaml;
-          fi
-          if [ ${{ matrix.task }} == "upgrade" ] && [ ${{ matrix.mode }} == "standalone" ]; then
-              echo "task: ${{ matrix.task }} mode: ${{ matrix.mode }}";
-              helm install --wait --timeout 720s deploy-testing milvus/milvus --set image.all.tag=master-20220125-6336e232 -f standalone-values.yaml;
-          fi
+  #         # if the task is upgrade, install milvus with latest rc image in repo milvusdb/milvus
+  #         if [ ${{ matrix.task }} == "upgrade" ] && [ ${{ matrix.mode }} == "cluster" ]; then
+  #             echo "task: ${{ matrix.task }} mode: ${{ matrix.mode }}";
+  #             helm install --wait --timeout 720s deploy-testing milvus/milvus --set image.all.tag=master-20220125-6336e232 -f cluster-values.yaml;
+  #         fi
+  #         if [ ${{ matrix.task }} == "upgrade" ] && [ ${{ matrix.mode }} == "standalone" ]; then
+  #             echo "task: ${{ matrix.task }} mode: ${{ matrix.mode }}";
+  #             helm install --wait --timeout 720s deploy-testing milvus/milvus --set image.all.tag=master-20220125-6336e232 -f standalone-values.yaml;
+  #         fi
 
-          kubectl get pods
-          sleep 20s
-          kubectl get pods
-          kubectl port-forward service/deploy-testing-milvus 19530 >/dev/null 2>&1 &
-          sleep 20s
-          # check whether port-forward success
-          nc -vz 127.0.0.1 19530
+  #         kubectl get pods
+  #         sleep 20s
+  #         kubectl get pods
+  #         kubectl port-forward service/deploy-testing-milvus 19530 >/dev/null 2>&1 &
+  #         sleep 20s
+  #         # check whether port-forward success
+  #         nc -vz 127.0.0.1 19530
 
-          # first test
-          if [ ${{ matrix.task }} == "reinstall" ]; then python scripts/action_before_reinstall.py; fi
-          if [ ${{ matrix.task }} == "upgrade" ]; then python scripts/action_before_upgrade.py; fi
+  #         # first test
+  #         if [ ${{ matrix.task }} == "reinstall" ]; then python scripts/action_before_reinstall.py; fi
+  #         if [ ${{ matrix.task }} == "upgrade" ]; then python scripts/action_before_upgrade.py; fi
 
 
-          # uninstall milvus
-          if [[ $(date +%w) -eq 0 || $(data +%w) -eq 6 ]]; then sleep 1800s; fi
-          if [ ${{ matrix.mode }} == "standalone" ]; 
-          then
-            kubectl delete pod -l app.kubernetes.io/instance=deploy-testing --grace-period=0 --force;
-            kubectl delete pod -l release=deploy-testing --grace-period=0 --force;
-          else
-            helm uninstall deploy-testing
-          fi
-      - name: Seconde Milvus Deployment
-        timeout-minutes: 60
-        shell: bash
-        working-directory: tests/python_client/deploy     
-        run: |
-          if [ ${{ matrix.mode }} == "cluster" ]; then helm install --wait --timeout 720s deploy-testing milvus/milvus -f cluster-values.yaml; fi
-          if [ ${{ matrix.mode }} == "standalone" ]; then helm upgrade --wait --timeout 720s deploy-testing milvus/milvus -f standalone-values.yaml; fi
-          kubectl get pods
-          sleep 20s
-          kubectl get pods
-          ps aux|grep forward|grep -v grep|awk '{print $2}'|xargs kill -9
-          kubectl port-forward service/deploy-testing-milvus 19530 >/dev/null 2>&1 &
-          sleep 120s
-          # check whether port-forward success
-          nc -vz 127.0.0.1 19530
+  #         # uninstall milvus
+  #         if [[ $(date +%w) -eq 0 || $(data +%w) -eq 6 ]]; then sleep 1800s; fi
+  #         if [ ${{ matrix.mode }} == "standalone" ]; 
+  #         then
+  #           kubectl delete pod -l app.kubernetes.io/instance=deploy-testing --grace-period=0 --force;
+  #           kubectl delete pod -l release=deploy-testing --grace-period=0 --force;
+  #         else
+  #           helm uninstall deploy-testing
+  #         fi
+  #     - name: Seconde Milvus Deployment
+  #       timeout-minutes: 60
+  #       shell: bash
+  #       working-directory: tests/python_client/deploy     
+  #       run: |
+  #         if [ ${{ matrix.mode }} == "cluster" ]; then helm install --wait --timeout 720s deploy-testing milvus/milvus -f cluster-values.yaml; fi
+  #         if [ ${{ matrix.mode }} == "standalone" ]; then helm upgrade --wait --timeout 720s deploy-testing milvus/milvus -f standalone-values.yaml; fi
+  #         kubectl get pods
+  #         sleep 20s
+  #         kubectl get pods
+  #         ps aux|grep forward|grep -v grep|awk '{print $2}'|xargs kill -9
+  #         kubectl port-forward service/deploy-testing-milvus 19530 >/dev/null 2>&1 &
+  #         sleep 120s
+  #         # check whether port-forward success
+  #         nc -vz 127.0.0.1 19530
           
-          # second test
-          if [ ${{ matrix.task }} == "reinstall" ]; then python scripts/action_after_reinstall.py; fi
-          if [ ${{ matrix.task }} == "upgrade" ]; then python scripts/action_after_upgrade.py; fi
+  #         # second test
+  #         if [ ${{ matrix.task }} == "reinstall" ]; then python scripts/action_after_reinstall.py; fi
+  #         if [ ${{ matrix.task }} == "upgrade" ]; then python scripts/action_after_upgrade.py; fi
         
-      - name: Export logs
-        if: ${{ always() }}
-        shell: bash
-        working-directory: tests/python_client/deploy
-        run: |
-          kubectl get pod
-          # export k8s log for milvus
-          bash ../../scripts/export_log_k8s.sh default deploy-testing
+  #     - name: Export logs
+  #       if: ${{ always() }}
+  #       shell: bash
+  #       working-directory: tests/python_client/deploy
+  #       run: |
+  #         kubectl get pod
+  #         # export k8s log for milvus
+  #         bash ../../scripts/export_log_k8s.sh default deploy-testing
       
-      - name: Upload logs
-        if: ${{ always() }}
-        uses: actions/upload-artifact@v2
-        with:
-          name: helm-log-${{ matrix.mode }}-${{ matrix.task }}
-          path: tests/python_client/deploy/k8s_logs       
+  #     - name: Upload logs
+  #       if: ${{ always() }}
+  #       uses: actions/upload-artifact@v2
+  #       with:
+  #         name: helm-log-${{ matrix.mode }}-${{ matrix.task }}
+  #         path: tests/python_client/deploy/k8s_logs       
           
 
 
