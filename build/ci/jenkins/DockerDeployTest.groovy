@@ -148,6 +148,9 @@ pipeline {
                                 sh "wget https://github.com/milvus-io/milvus/releases/download/${params.release_version}/milvus-${params.milvus_mode}-docker-compose.yml -O docker-compose.yml"                                 
                             }
 
+                            // modify docker-compose.yaml
+                            sh "python ../scripts/modify_yaml.py --file_name 'docker-compose.yaml' --suffix '${env.BUILD_ID}'"
+
                             // deploy milvus
                             sh"""
                             MILVUS_IMAGE="${old_image_repository_modified}:${old_image_tag_modified}" \
@@ -167,7 +170,8 @@ pipeline {
                 container('main') {
                     dir ('tests/python_client/deploy/scripts') {
                         script {
-                        def host = "127.0.0.1"
+                        def host = sh(returnStdout: true, script: "docker inspect -f '{{range.NetworkSettings.Networks}}{{.IPAddress}}{{end}}' milvus-${params.milvus_mode}-${env.BUILD_ID}").trim()    
+                        // def host = docker inspect -f '{{range.NetworkSettings.Networks}}{{.IPAddress}}{{end}}' milvus-standalone
                         
                         if ("${params.deploy_task}" == "reinstall") {
                             sh "python3 action_before_reinstall.py --host ${host} --data_size ${params.data_size}"
@@ -225,6 +229,7 @@ pipeline {
                         script {
 
                             // in case of master-latest is different in two stages, we need use the new_image_tag_modified.txt to store the new_image_tag in first stage
+                            // this case will happen when a new images is pushed to docker hub after the first stage
                             def new_image_tag_modified = ""
 
                             dir ("new_image_tag_modified"){
@@ -236,6 +241,15 @@ pipeline {
                                     exit 1
                                 }
                             }
+                            // if the task is upgrade, we need to download the docker-compose.yaml from master branch
+                            // because the different may not only be the image tag, but also some other parameters
+                            if ("${params.deploy_task}" == "upgrade"){
+                                echo "download docker-compose.yaml from master branch"
+                                sh "wget https://raw.githubusercontent.com/milvus-io/milvus/master/deployments/docker/${params.milvus_mode}/docker-compose.yml -O docker-compose.yml"
+                                // modify docker-compose.yaml
+                                sh "python ../scripts/modify_yaml.py --file_name 'docker-compose.yaml' --suffix '${env.BUILD_ID}'"
+                            }
+
                             // deploy milvus
                             sh"""
                             MILVUS_IMAGE="${new_image_repository_modified}:${new_image_tag_modified}" \
@@ -257,7 +271,7 @@ pipeline {
                     dir ('tests/python_client/deploy/scripts') {
                         script {
                         sh "sleep 60s" // wait loading data for the second deployment to be ready
-                        def host = "127.0.0.1"
+                        def host = sh(returnStdout: true, script: "docker inspect -f '{{range.NetworkSettings.Networks}}{{.IPAddress}}{{end}}' milvus-${params.milvus_mode}-${env.BUILD_ID}").trim()
                         if ("${params.deploy_task}" == "reinstall") {
                             sh "python3 action_after_reinstall.py --host ${host} --data_size ${params.data_size}"
                         }
