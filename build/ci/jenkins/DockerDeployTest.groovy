@@ -149,7 +149,7 @@ pipeline {
                             }
 
                             // modify docker-compose.yaml
-                            sh "python ../scripts/modify_yaml.py --file_name 'docker-compose.yml' --suffix '${env.BUILD_ID}'"
+                            sh "python3 ../scripts/modify_yaml.py --file_name 'docker-compose.yml' --suffix '${env.BUILD_ID}'"
 
                             // deploy milvus
                             sh"""
@@ -247,7 +247,7 @@ pipeline {
                                 echo "download docker-compose.yaml from master branch"
                                 sh "wget https://raw.githubusercontent.com/milvus-io/milvus/master/deployments/docker/${params.milvus_mode}/docker-compose.yml -O docker-compose.yml"
                                 // modify docker-compose.yaml
-                                sh "python ../scripts/modify_yaml.py --file_name 'docker-compose.yml' --suffix '${env.BUILD_ID}'"
+                                sh "python3 ../scripts/modify_yaml.py --file_name 'docker-compose.yml' --suffix '${env.BUILD_ID}'"
                             }
 
                             // deploy milvus
