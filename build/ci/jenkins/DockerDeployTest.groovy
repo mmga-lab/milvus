@@ -91,7 +91,7 @@ pipeline {
         }
         stage ('First Milvus Deployment') {
             options {
-              timeout(time: 10, unit: 'MINUTES')   // timeout on this stage
+              timeout(time: 100, unit: 'MINUTES')   // timeout on this stage
             }
             steps {
                 container('main') {
@@ -153,7 +153,7 @@ pipeline {
                             MILVUS_IMAGE="${old_image_repository_modified}:${old_image_tag_modified}" \
                             docker-compose up -d
                             """
-                            sleep(30)
+                            sleep(6000)
                             // wait for milvus ready
                             sh "bash ../check_healthy.sh"
 
