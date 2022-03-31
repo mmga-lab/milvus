@@ -92,10 +92,10 @@ jobs:
           fi
 
           if [ ${{ matrix.task }} == "upgrade" ]; then
-            wget https://github.com/milvus-io/milvus/releases/download/${{ env.PREVIOUS_RELEASE_VERSION }}/milvus-${params.milvus_mode}-docker-compose.yml -O docker-compose.yml;
+            wget https://github.com/milvus-io/milvus/releases/download/${{ env.PREVIOUS_RELEASE_VERSION }}/milvus-${{ matrix.mode }}-docker-compose.yml -O docker-compose.yml;
             MILVUS_IMAGE="${{ env.OLD_IMAGE_REPO }}:${{ env.OLD_IMAGE_TAG }}";
           fi
-
+          echo "$MILVUS_IMAGE"
           docker-compose up -d
 
           bash ../check_healthy.sh
@@ -123,7 +123,9 @@ jobs:
           fi
 
           if [ ${{ matrix.task }} == "upgrade" ]; then
+            wget wget https://raw.githubusercontent.com/milvus-io/milvus/master/deployments/docker/${{ matrix.mode }}/docker-compose.yml -O docker-compose.yml;
             MILVUS_IMAGE="${{ env.NEW_IMAGE_REPO }}:${{ env.NEW_IMAGE_TAG }}";
+            echo "$MILVUS_IMAGE"
             docker-compose up -d  
           fi
 
