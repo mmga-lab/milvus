@@ -17,8 +17,8 @@ def modify_yaml(file_name, suffix):
 if __name__ == "__main__":
     import argparse
     parser = argparse.ArgumentParser(description='config for deploy test')
-    parser.add_argument('--file_name', type=str, default="docker-compose.yaml", help='docker-compose.yaml file name')
-    parser.add_argument('--suffix', type=str, default="_test", help='suffix for container name')
+    parser.add_argument('--file_name', type=str, default="docker-compose.yml", help='docker-compose.yaml file name')
+    parser.add_argument('--suffix', type=str, default="test", help='suffix for container name')
     args = parser.parse_args()
     file_name = args.file_name
     suffix = args.suffix
