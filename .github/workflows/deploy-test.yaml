@@ -99,6 +99,9 @@ jobs:
           docker-compose up -d
 
           bash ../check_healthy.sh
+          docker-compose ps -a
+
+          sleep 10s
 
       - name: Run first test
         timeout-minutes: 60
@@ -123,13 +126,15 @@ jobs:
           fi
 
           if [ ${{ matrix.task }} == "upgrade" ]; then
-            wget wget https://raw.githubusercontent.com/milvus-io/milvus/master/deployments/docker/${{ matrix.mode }}/docker-compose.yml -O docker-compose.yml;
+            wget https://raw.githubusercontent.com/milvus-io/milvus/master/deployments/docker/${{ matrix.mode }}/docker-compose.yml -O docker-compose.yml;
             MILVUS_IMAGE="${{ env.NEW_IMAGE_REPO }}:${{ env.NEW_IMAGE_TAG }}";
-            echo "$MILVUS_IMAGE"
+            echo "$MILVUS_IMAGE";
             docker-compose up -d  
           fi
 
           bash ../check_healthy.sh
+          docker-compose ps -a
+          sleep 30s
 
 
       - name: Run second test
@@ -169,7 +174,7 @@ jobs:
           from: GitHub Actions
 
       - name: Upload logs
-        if: ${{ always() }}
+        if: ${{ failure() }}
         uses: actions/upload-artifact@v2
         with:
           name: docker-compose-logs-${{ matrix.mode }}-${{ matrix.task }}
