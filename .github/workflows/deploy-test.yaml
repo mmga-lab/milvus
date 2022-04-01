@@ -130,7 +130,9 @@ jobs:
 
           bash ../check_healthy.sh
           docker-compose ps -a
-          sleep 30s
+          
+          echo "sleep 120s for the second deployment to be ready"
+          sleep 120s
 
 
       - name: Run second test
