@@ -48,8 +48,8 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        mode: [cluster]
-        task: [upgrade]
+        mode: [standalone, cluster]
+        task: [reinstall, upgrade]
 
     steps:
       - name: Set env param
