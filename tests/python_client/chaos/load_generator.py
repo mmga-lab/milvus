@@ -10,22 +10,28 @@ from common import common_func as cf
 # we can configure the numbers of different Ops in a checker
 
 class LoadUnit():
-    def __init__(self,collection_name=None) -> None:
-        self.collection_name = collection_name if collection_name \
-                               else cf.gen_unique_str("Checker_")
-        self.weights = {}
-        self.init_checkers()
 
-    def init_checkers(self):
+    # 这个类主要是对一个collection进行多线程的操作，比如创建，插入，查询，索引，删除等
+    def __init__(self,collection_name=None, weights={}) -> None:
+        if collection_name is not None:
+            self.collection_name = collection_name
+        else:
+            self.collection_name = cf.gen_unique_str("Checker_")
+
+        self.weights = weights
+        self.update_checkers()
+
+    def update_checkers(self,weights=None):
         """init checkers"""
-        weights = self.weights
+        if weights is not None:
+            self.weights = weights
         self.checkers = {
-            Op.create: [CreateChecker() for _ in range(weights.get(Op.create, 0))],
-            Op.insert: [InsertFlushChecker() for _ in range(weights.get(Op.insert, 0))],
-            Op.flush: [InsertFlushChecker(flush=True) for _ in range(weights.get(Op.flush,0))],
-            Op.index: [IndexChecker() for _ in range(weights.get(Op.index, 0))],
-            Op.search: [SearchChecker() for _ in range(weights.get(Op.search, 0))],
-            Op.query: [QueryChecker() for _ in range(weights.get(Op.query, 0))]             
+            Op.create: [CreateChecker(collection_name=self.collection_name) for _ in range(self.weights.get(Op.create, 0))],
+            Op.insert: [InsertFlushChecker(collection_name=self.collection_name) for _ in range(self.weights.get(Op.insert, 0))],
+            Op.flush: [InsertFlushChecker(collection_name=self.collection_name, flush=True) for _ in range(self.weights.get(Op.flush,0))],
+            Op.index: [IndexChecker(collection_name=self.collection_name) for _ in range(self.weights.get(Op.index, 0))],
+            Op.search: [SearchChecker(collection_name=self.collection_name) for _ in range(self.weights.get(Op.search, 0))],
+            Op.query: [QueryChecker(collection_name=self.collection_name) for _ in range(self.weights.get(Op.query, 0))]             
         }
 
     def start_monitor_threads(self):
@@ -47,6 +53,22 @@ class LoadUnit():
         for k, checkers in self.checkers.items():
             for ch in checkers:
                 ch.terminate()
+
+
+
+
+class LoadGenerator():
+
+    # 这个类主要是为了对多个collection进行操作，每个collection通过loadunit来进行操作
+    # 所以这个类是一个更宏观层面的类，我们的输入主要是collection的数量
+    # 这个类用于描述生成多大的压力，例如可以创建多少个collection，每个collection有多少个操作
+    def __init__(self,process_num) -> None:
+        self.process_num = process_num
+        self.scenes = {} # 
+
+
+
+
 
 
 
