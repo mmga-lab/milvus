@@ -1,5 +1,6 @@
 from enum import Enum
 from random import randint
+import random
 import time
 from time import sleep
 from delayed_assert import expect
@@ -236,6 +237,39 @@ class QueryChecker(Checker):
             else:
                 self._fail += 1
             sleep(constants.WAIT_PER_OP / 10)
+
+class DeleteChecker(Checker):
+    def __init__(self, collection_name=None):
+        super().__init__(collection_name=collection_name)
+        self.c_wrap.load(enable_traceback=enable_traceback)  # load before query
+
+    def keep_running(self):
+        while self._running:
+            # get id to delete
+            term_expr = f'{ct.default_int64_field_name} > 0'
+            res, result = self.c_wrap.query(term_expr, timeout=timeout,
+                                                    enable_traceback=enable_traceback,
+                                                    check_task=CheckTasks.check_nothing)            
+            ids = [r[ct.default_int64_field_name] for r in res]
+            delete_ids = random.sample(ids, constants.ENTITIES_FOR_DELETE)
+            term_expr = f'{ct.default_int64_field_name} in {delete_ids}'
+            t0 = time.time()
+            _, result = self.c_wrap.delete(term_expr, timeout=timeout,
+                                          enable_traceback=enable_traceback,
+                                          check_task=CheckTasks.check_nothing)
+            t1 = time.time()
+            if result:
+                self.rsp_times.append(t1 - t0)
+                self.average_time = ((t1 - t0) + self.average_time * self._succ) / (self._succ + 1)
+                self._succ += 1
+                log.debug(f"delete success, time: {t1 - t0:.4f}, average_time: {self.average_time:.4f}")
+            else:
+                self._fail += 1
+            sleep(constants.WAIT_PER_OP / 10)    
+
+class LoadBalanceChecker(Checker):
+    pass
+
 
 
 def assert_statistic(checkers, expectations={}):

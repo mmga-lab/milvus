@@ -30,14 +30,19 @@ class LoadUnit():
 			print(task)
 			t = threading.Thread(target=task.keep_running, args=())
 			t.start()
+			t.join()
 
+
+def task_excutor(t_ids):
+	lu = LoadUnit(t_ids)
+	lu.start_thread()
 
 
 if __name__ == '__main__':
 
-	def task_excutor(t_ids):
-		lu = LoadUnit(t_ids)
-		lu.start_thread()
+	# def task_excutor(t_ids):
+	# 	lu = LoadUnit(t_ids)
+	# 	lu.start_thread()
 
 	# task_ids = ("a", "b", "c")
 	# task_excutor(task_ids)
