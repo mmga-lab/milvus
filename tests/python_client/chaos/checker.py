@@ -1,9 +1,11 @@
 from enum import Enum
 from random import randint
+import random
 import time
 from time import sleep
 from delayed_assert import expect
 from base.collection_wrapper import ApiCollectionWrapper
+from base.utility_wrapper import ApiUtilityWrapper
 from common import common_func as cf
 from common import common_type as ct
 from chaos import constants
@@ -223,6 +225,115 @@ class QueryChecker(Checker):
                 self.average_time = ((t1 - t0) + self.average_time * self._succ) / (self._succ + 1)
                 self._succ += 1
                 log.debug(f"query success, time: {t1 - t0:.4f}, average_time: {self.average_time:.4f}")
+            else:
+                self._fail += 1
+            sleep(constants.WAIT_PER_OP / 10)
+
+
+class DeleteChecker(Checker):
+    """check query operations in a dependent thread"""
+
+    def __init__(self):
+        super().__init__()
+        self.c_wrap.load()  # load before query
+
+    def keep_running(self):
+        while True:
+            term_expr = f'{ct.default_int64_field_name} > 0'
+            res, _ = self.c_wrap.query(term_expr, output_fields=[ct.default_int64_field_name])
+            ids = [r[ct.default_int64_field_name] for r in res]
+            delete_ids = random.sample(ids, 2)
+            expr = f'{ct.default_int64_field_name} in {delete_ids}'
+            t0 = time.time()
+            _, result = self.c_wrap.delete(expr=expr, timeout=timeout)
+            t1 = time.time()
+            if result:
+                self.rsp_times.append(t1 - t0)
+                self.average_time = ((t1 - t0) + self.average_time * self._succ) / (self._succ + 1)
+                self._succ += 1
+                log.debug(f"delete success, time: {t1 - t0:.4f}, average_time: {self.average_time:.4f}")
+            else:
+                self._fail += 1
+            sleep(constants.WAIT_PER_OP / 10)
+
+
+class CompactChecker(Checker):
+    """check compact operations in a dependent thread"""
+
+    def __init__(self):
+        super().__init__()
+        # self.c_wrap.load(enable_traceback=enable_traceback)  # load before compact
+
+    def keep_running(self):
+        while True:
+            t0 = time.time()
+            _, result = self.c_wrap.compact()
+            self.c_wrap.wait_for_compaction_completed()
+            self.c_wrap.get_compaction_plans()
+            t1 = time.time()
+            if result:
+                self.rsp_times.append(t1 - t0)
+                self.average_time = ((t1 - t0) + self.average_time * self._succ) / (self._succ + 1)
+                self._succ += 1
+                log.debug(f"compact success, time: {t1 - t0:.4f}, average_time: {self.average_time:.4f}")
+            else:
+                self._fail += 1
+            sleep(constants.WAIT_PER_OP / 10)
+
+
+class DropChecker(Checker):
+    """check drop operations in a dependent thread"""
+
+    def __init__(self):
+        super().__init__()
+        # self.c_wrap.load(enable_traceback=enable_traceback)  # load before compact
+
+    def keep_running(self):
+        while True:
+            t0 = time.time()
+            _, result = self.c_wrap.drop()
+            t1 = time.time()
+            if result:
+                self.rsp_times.append(t1 - t0)
+                self.average_time = ((t1 - t0) + self.average_time * self._succ) / (self._succ + 1)
+                self._succ += 1
+                log.debug(f"drop success, time: {t1 - t0:.4f}, average_time: {self.average_time:.4f}")
+            else:
+                self._fail += 1
+            sleep(constants.WAIT_PER_OP / 10)
+
+class LoadbalanceChecker(Checker):
+    """check drop operations in a dependent thread"""
+
+    def __init__(self):
+        super().__init__()
+        self.ut = ApiCollectionWrapper()
+        self.c_wrap.load(enable_traceback=enable_traceback)
+    def keep_running(self):
+        while True:
+            seg_info = self.ut.get_query_segment_info(self.c_wrap.name)
+            nodeIDs = [seg.nodeID for seg in seg_info]
+            nodeIDs = list(set(nodeIDs))
+            src_node_id = None
+            sealed_segment_ids = []
+            for seg in seg_info:
+                if seg.state == "3": # sealed segment state
+                    sealed_segment_ids= [seg.segmentID]
+                    src_node_id = seg.nodeID
+                    break
+            dst_node_ids = []
+            for node_id in nodeIDs:
+                if node_id != src_node_id:
+                    dst_node_ids = [node_id]
+                    break
+            t0 = time.time()
+            _, result = self.ut.load_balance(src_node_id, dst_node_ids, sealed_segment_ids)
+            t1 = time.time()
+            if result:
+                self.rsp_times.append(t1 - t0)
+                self.average_time = ((t1 - t0) + self.average_time * self._succ) / (self._succ + 1)
+                self._succ += 1
+                log.debug(f"load balance success, time: {t1 - t0:.4f}, average_time: {self.average_time:.4f}")
             else:
                 self._fail += 1
             sleep(constants.WAIT_PER_OP / 10)
