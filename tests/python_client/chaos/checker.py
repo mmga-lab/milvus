@@ -357,7 +357,7 @@ class LoadBalanceChecker(Checker):
 				log.debug(f"load balance success, time: {t1 - t0:.4f}, average_time: {self.average_time:.4f}")
 			else:
 				self._fail += 1
-			sleep(10)
+			sleep(constants.WAIT_PER_OP / 10)
 
 
 def assert_statistic(checkers, expectations={}):
