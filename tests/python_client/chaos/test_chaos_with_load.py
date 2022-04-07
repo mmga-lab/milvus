@@ -154,11 +154,15 @@ class TestChaos(TestChaosBase):
 
 		weights = {
 			# Op.create: 1,
-			Op.insert: 1,
-			Op.flush: 1,
+			# Op.insert: 1,
+			# Op.flush: 1,
+			# Op.delete: 1,
 			# Op.index: 1,
-			Op.search: 1,
-			Op.query: 1
+			# Op.search: 1,
+			# Op.query: 1,
+			# Op.compact: 1,
+			Op.loadbalance: 1,
+			# Op.drop: 1
 		}
 		weights_list = [
 			{
@@ -179,9 +183,9 @@ class TestChaos(TestChaosBase):
 
 		# task_exector(weights)
 		print("#########")
-		# lu = LoadUnit(weights=weights)
-		# lu.start_monitor_threads()
-		# sleep(600)
+		lu = LoadUnit(weights=weights)
+		lu.start_monitor_threads()
+		sleep(600)
 		# lu.terminate_monitor_threads()
 
 		#
@@ -213,9 +217,9 @@ class TestChaos(TestChaosBase):
 		# 	print("1111111111")
 		# # task_exector(weights_list[0])
 		# sleep(600)
-		lg = LoadGenerator()
-		lg.start_load_generator(weights_list=check_list)
+		# lg = LoadGenerator()
+		# lg.start_load_generator(weights_list=check_list)
 
-		sleep(600)
+		# sleep(600)
 
 	# cc.start_monitor_threads(self.health_checkers)

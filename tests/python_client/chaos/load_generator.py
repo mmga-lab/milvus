@@ -3,7 +3,8 @@ from multiprocessing import Process
 from time import sleep
 import copy
 import os
-from chaos.checker import (CreateChecker, InsertFlushChecker, SearchChecker, QueryChecker, IndexChecker, Op)
+from chaos.checker import (CreateChecker, InsertFlushChecker, SearchChecker, QueryChecker, IndexChecker,
+						   DeleteChecker, CompactChecker, DropChecker, LoadBalanceChecker, Op)
 from common import common_func as cf
 
 
@@ -37,7 +38,15 @@ class LoadUnit():
 					   range(self.weights.get(Op.index, 0))],
 			Op.search: [SearchChecker(collection_name=self.collection_name) for _ in
 						range(self.weights.get(Op.search, 0))],
-			Op.query: [QueryChecker(collection_name=self.collection_name) for _ in range(self.weights.get(Op.query, 0))]
+			Op.query: [QueryChecker(collection_name=self.collection_name) for _ in
+					   range(self.weights.get(Op.query, 0))],
+			Op.delete: [DeleteChecker(collection_name=self.collection_name) for _ in
+						range(self.weights.get(Op.delete, 0))],
+			Op.compact: [CompactChecker(collection_name=self.collection_name) for _ in
+						 range(self.weights.get(Op.compact, 0))],
+			Op.drop: [DropChecker(collection_name=self.collection_name) for _ in range(self.weights.get(Op.drop, 0))],
+			Op.loadbalance: [LoadBalanceChecker(collection_name=self.collection_name) for _ in
+							 range(self.weights.get(Op.loadbalance, 0))]
 		}
 
 	def start_monitor_threads(self):
