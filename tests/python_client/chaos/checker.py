@@ -282,9 +282,8 @@ class CompactChecker(Checker):
 
 	def keep_running(self):
 		while True:
+			seg_info = self.ut.get_query_segment_info(self.c_wrap.name)
 			t0 = time.time()
-			# seg_info = self.ut.get_query_segment_info(self.c_wrap)
-			# print(seg_info)
 			res, result = self.c_wrap.compact(timeout=timeout)
 			print(f"compact done: res {res}")
 			self.c_wrap.wait_for_compaction_completed()
@@ -327,17 +326,14 @@ class LoadBalanceChecker(Checker):
 	def __init__(self, collection_name=None):
 		super().__init__(collection_name=collection_name)
 		self.ut = ApiUtilityWrapper()
-		# self.ms = MilvusSys(alias="default")
 		self.c_wrap.load(enable_traceback=enable_traceback)
 
 	def keep_running(self):
 		while True:
 			ms = MilvusSys(alias="default")
 			querynodes = ms.query_nodes
-			print(querynodes)
 			seg_info, _ = self.ut.get_query_segment_info(self.c_wrap.name)
 			nodeIDs = [q["identifier"] for q in querynodes]
-			print(nodeIDs)
 			nodeIDs = list(set(nodeIDs))
 			src_node_id = None
 			sealed_segment_ids = []
@@ -351,8 +347,6 @@ class LoadBalanceChecker(Checker):
 				if node_id != src_node_id:
 					dst_node_ids = [node_id]
 					break
-
-			print(src_node_id, dst_node_ids, sealed_segment_ids)
 			t0 = time.time()
 			res, result = self.ut.load_balance(src_node_id, dst_node_ids, sealed_segment_ids)
 			t1 = time.time()

@@ -22,7 +22,7 @@ class ApiCollectionWrapper():
 
     def __init__(self, active_trace=False):
         self.active_trace = active_trace
-        
+
     def init_collection(self, name, schema=None, using="default", shards_num=2, check_task=None, check_items=None, active_trace=False, **kwargs):
         self.active_trace = active_trace
         consistency_level = kwargs.get("consistency_level", CONSISTENCY_STRONG)
@@ -81,7 +81,7 @@ class ApiCollectionWrapper():
         res, check = api_request([self.collection.drop], **kwargs)
         check_result = ResponseChecker(res, func_name, check_task, check_items, check, **kwargs).run()
         return res, check_result
-    
+
     @trace()
     def load(self, partition_names=None, check_task=None, check_items=None, **kwargs):
         timeout = kwargs.get("timeout", TIMEOUT)
@@ -92,7 +92,7 @@ class ApiCollectionWrapper():
         check_result = ResponseChecker(res, func_name, check_task, check_items, check,
                                        partition_names=partition_names, **kwargs).run()
         return res, check_result
-    
+
     @trace()
     def release(self, check_task=None, check_items=None, **kwargs):
         timeout = kwargs.get("timeout", TIMEOUT)
@@ -103,9 +103,9 @@ class ApiCollectionWrapper():
         check_result = ResponseChecker(res, func_name, check_task,
                                        check_items, check, **kwargs).run()
         return res, check_result
-    
+
     @trace()
-    def insert(self, data, partition_name=None, check_task=None, check_items=None, **kwargs):        
+    def insert(self, data, partition_name=None, check_task=None, check_items=None, **kwargs):
         timeout = kwargs.get("timeout", TIMEOUT)
         kwargs.update({"timeout": timeout})
         func_name = sys._getframe().f_code.co_name
@@ -290,4 +290,4 @@ class ApiCollectionWrapper():
         timeout = TIMEOUT * 3 if timeout is None else timeout
         res = self.collection.wait_for_compaction_completed(timeout, **kwargs)
         # log.debug(res)
-        return res
+        return res, True
