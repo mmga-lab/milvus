@@ -24,6 +24,11 @@ pipeline {
             choices: ["standalone", "cluster"]
         )
         choice(
+            description: 'MQ Type',
+            name: 'mq_type',
+            choices: ["pulsar", "kafka"]
+        )        
+        choice(
             description: 'Deploy Test Task',
             name: 'deploy_task',
             choices: ['reinstall', 'upgrade']
@@ -84,6 +89,27 @@ pipeline {
                 }
             }
         }
+        stage ('Modify Milvus chart values') {
+            steps {
+                container('main') {
+                    dir ('tests/python_client/deploy') {
+                        script {
+                        // disable all mq
+                        sh "yq -i '.kafka.enabled = false' cluster-values.yaml"
+                        sh "yq -i '.pulsar.enabled = false' cluster-values.yaml"
+                        // enable mq_type
+                        if ("${params.mq_type}" == "pulsar") {
+                            sh "yq -i '.pulsar.enabled = true' cluster-values.yaml"
+                        } else if ("${params.mq_type}" == "kafka") {
+                            sh "yq -i '.kafka.enabled = true' cluster-values.yaml"
+                        }
+                        
+                        sh "cat cluster-values.yaml"
+                        }
+                        }
+                    }
+                }
+        }        
         stage ('First Milvus Deployment') {
             options {
               timeout(time: 10, unit: 'MINUTES')   // timeout on this stage
