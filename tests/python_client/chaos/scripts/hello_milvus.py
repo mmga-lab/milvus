@@ -89,7 +89,7 @@ def hello_milvus(host="127.0.0.1"):
     # define output_fields of search result
     res = collection.search(
         vectors[-2:], "float_vector", search_params, topK,
-        "int64 > 100 and varchar >= \"0\"", output_fields=["int64", "float", "varchar"], timeout=TIMEOUT
+        "int64 > 100", output_fields=["int64", "float"], timeout=TIMEOUT
     )
     t1 = time.time()
     print(f"search cost  {t1 - t0:.4f} seconds")
@@ -101,7 +101,7 @@ def hello_milvus(host="127.0.0.1"):
 
     # query
     expr = "int64 in [2,4,6,8]"
-    output_fields = ["int64", "float", "varchar"]
+    output_fields = ["int64", "float"]
     res = collection.query(expr, output_fields, timeout=TIMEOUT)
     sorted_res = sorted(res, key=lambda k: k['int64'])
     for r in sorted_res:
