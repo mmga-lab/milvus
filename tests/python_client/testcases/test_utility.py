@@ -1688,6 +1688,7 @@ class TestUtilityAdvanced(TestcaseBase):
         collection_w.insert(df)
         # get replicas information
         res, _ = collection_w.get_replicas()
+        log.info(f"replicas info: {res}")
         # prepare load balance params
         # find a group which has multi nodes
         group_nodes = []
@@ -1700,12 +1701,15 @@ class TestUtilityAdvanced(TestcaseBase):
         res, _ = self.utility_wrap.get_query_segment_info(c_name)
         segment_distribution = cf.get_segment_distribution(res)
         sealed_segment_ids = segment_distribution[src_node_id]["sealed"]
+        log.info(f"segment_distribution before load balance: {segment_distribution}")
         # load balance
+        log.info(f"load balance sealed segments {sealed_segment_ids} of collection {collection_w.name} from node {src_node_id} to node {dst_node_ids}")
         self.utility_wrap.load_balance(collection_w.name, src_node_id, dst_node_ids, sealed_segment_ids)
         # get segments distribution after load balance
         res, _ = self.utility_wrap.get_query_segment_info(c_name)
         segment_distribution = cf.get_segment_distribution(res)
         sealed_segment_ids_after_load_banalce = segment_distribution[src_node_id]["sealed"]
+        log.info(f"segment_distribution after load balance: {segment_distribution}")
         # assert
         assert sealed_segment_ids_after_load_banalce == []
         des_sealed_segment_ids = []
