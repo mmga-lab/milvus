@@ -22,3 +22,4 @@ RELEASE_NAME = 'test-allstandalone-pod-kill-19-25-26'
 WAIT_PER_OP = 10  # time to wait in seconds between operations
 CHAOS_DURATION = 120  # chaos duration time in seconds
 DEFAULT_INDEX_PARAM = {"index_type": "IVF_SQ8", "metric_type": "L2", "params": {"nlist": 64}}
+DEFAULT_STRING_INDEX_PARAM = {}

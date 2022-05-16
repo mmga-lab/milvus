@@ -71,7 +71,8 @@ def hello_milvus(host="127.0.0.1"):
     default_index = {"index_type": "IVF_SQ8", "metric_type": "L2", "params": {"nlist": 64}}
     print(f"\nCreate index...")
     t0 = time.time()
-    collection.create_index(field_name="float_vector", index_params=default_index)
+    collection.create_index(field_name="float_vector", index_params=default_index, index_name="vector_index")
+    collection.create_index(field_name="varchar", index_params={}, index_name="string_index")
     t1 = time.time()
     print(f"\nCreate index cost {t1 - t0:.4f} seconds")
     print(f"\nload collection...")
@@ -88,7 +89,7 @@ def hello_milvus(host="127.0.0.1"):
     # define output_fields of search result
     res = collection.search(
         vectors[-2:], "float_vector", search_params, topK,
-        "int64 > 100", output_fields=["int64", "float"], timeout=TIMEOUT
+        "int64 > 100 and varchar >= \"0\"", output_fields=["int64", "float", "varchar"], timeout=TIMEOUT
     )
     t1 = time.time()
     print(f"search cost  {t1 - t0:.4f} seconds")
@@ -100,7 +101,7 @@ def hello_milvus(host="127.0.0.1"):
 
     # query
     expr = "int64 in [2,4,6,8]"
-    output_fields = ["int64", "float"]
+    output_fields = ["int64", "float", "varchar"]
     res = collection.query(expr, output_fields, timeout=TIMEOUT)
     sorted_res = sorted(res, key=lambda k: k['int64'])
     for r in sorted_res:

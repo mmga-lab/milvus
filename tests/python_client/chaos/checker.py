@@ -186,19 +186,28 @@ class IndexChecker(Checker):
     def keep_running(self):
         while True:
             t0 = time.time()
-            _, result = self.c_wrap.create_index(ct.default_float_vec_field_name,
+            vector_index_name = "vector_index"
+            _, result_vector = self.c_wrap.create_index(ct.default_float_vec_field_name,
                                                  constants.DEFAULT_INDEX_PARAM,
-                                                 name=cf.gen_unique_str('index_'),
+                                                 index_name=vector_index_name,
+                                                 timeout=timeout,
+                                                 enable_traceback=enable_traceback,
+                                                 check_task=CheckTasks.check_nothing)
+            string_index_name = "string_index"
+            _, result_string = self.c_wrap.create_index(ct.default_string_field_name,
+                                                 constants.DEFAULT_STRING_INDEX_PARAM,
+                                                 index_name=string_index_name,
                                                  timeout=timeout,
                                                  enable_traceback=enable_traceback,
                                                  check_task=CheckTasks.check_nothing)
             t1 = time.time()
-            if result:
+            if result_vector and result_string:
                 self.rsp_times.append(t1 - t0)
                 self.average_time = ((t1 - t0) + self.average_time * self._succ) / (self._succ + 1)
                 self._succ += 1
                 log.debug(f"index success, time: {t1 - t0:.4f}, average_time: {self.average_time:.4f}")
-                self.c_wrap.drop_index(timeout=timeout)
+                self.c_wrap.drop_index(timeout=timeout, index_name=vector_index_name)
+                self.c_wrap.drop_index(timeout=timeout, index_name=string_index_name)
             else:
                 self._fail += 1
 
@@ -233,6 +242,9 @@ class QueryChecker(Checker):
 
 class BulkLoadChecker(Checker):
     """check bulk load operations in a dependent thread"""
+    """
+    
+    """
 
     def __init__(self,):
         super().__init__()
