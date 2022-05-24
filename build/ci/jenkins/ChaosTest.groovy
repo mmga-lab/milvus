@@ -52,6 +52,11 @@ pipeline {
             defaultValue: "3.5.0-debian-10-r24"
         )        
         string(
+            description: 'Query Replic Nums',
+            name: 'querynode_replica_nums',
+            defaultValue: '3'
+        )
+        string(
             description: 'Pod Nums',
             name: 'pod_nums',
             defaultValue: '1'
@@ -87,7 +92,7 @@ pipeline {
                     dir ('tests/python_client/chaos') {
                         script {
                         sh """
-                        yq -i '.queryNode.replicas = "${params.querynode_num}"' cluster-values.yaml
+                        yq -i '.queryNode.replicas = "${params.querynode_replica_nums}"' cluster-values.yaml
                         yq -i '.etcd.image.repository = "${params.etcd_image_repository}"' cluster-values.yaml
                         yq -i '.etcd.image.tag = "${params.etcd_image_tag}"' cluster-values.yaml
                         cat cluster-values.yaml
