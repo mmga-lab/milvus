@@ -86,10 +86,12 @@ pipeline {
                 container('main') {
                     dir ('tests/python_client/chaos') {
                         script {
-                        sh "yq -i '.queryNode.replicas = "${params.querynode_num}"' cluster-values.yaml"
-                        sh "yq -i '.etcd.image.repository = "${params.etcd_image_repository}"' cluster-values.yaml"
-                        sh "yq -i '.etcd.image.tag = "${params.etcd_image_tag}"' cluster-values.yaml"
-                        sh "cat cluster-values.yaml"
+                        sh """
+                        yq -i '.queryNode.replicas = "${params.querynode_num}"' cluster-values.yaml
+                        yq -i '.etcd.image.repository = "${params.etcd_image_repository}"' cluster-values.yaml
+                        yq -i '.etcd.image.tag = "${params.etcd_image_tag}"' cluster-values.yaml
+                        cat cluster-values.yaml
+                        """
                         }
                         }
                     }
