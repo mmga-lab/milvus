@@ -42,6 +42,16 @@ pipeline {
             defaultValue: 'master-latest'
         )
         string(
+            description: 'Etcd Image Repository',
+            name: 'etcd_image_repository',
+            defaultValue: 'docker.io/bitnami/etcd'
+        )
+        string(
+            description: 'Etcd Image Tag',
+            name: 'etcd_image_tag',
+            defaultValue: '3.5.0-debian-10-r24'
+        )        
+        string(
             description: 'Pod Nums',
             name: 'pod_nums',
             defaultValue: '1'
@@ -70,6 +80,20 @@ pipeline {
                     }
                 }
             }
+        }
+        stage ('Modify Milvus chart values') {
+            steps {
+                container('main') {
+                    dir ('tests/python_client/chaos') {
+                        script {
+                        sh "yq -i '.queryNode.replicas = ${params.querynode_num}' cluster-values.yaml"
+                        sh "yq -i '.etcd.image.repository = ${params.etcd_image_repository}' cluster-values.yaml"
+                        sh "yq -i '.etcd.image.tag = ${params.etcd_image_tag}' cluster-values.yaml"
+                        sh "cat cluster-values.yaml"
+                        }
+                        }
+                    }
+                }
         }
         stage ('Deploy Milvus') {
             options {
