@@ -44,12 +44,12 @@ pipeline {
         string(
             description: 'Etcd Image Repository',
             name: 'etcd_image_repository',
-            defaultValue: 'docker.io/bitnami/etcd'
+            defaultValue: "docker.io/bitnami/etcd"
         )
         string(
             description: 'Etcd Image Tag',
             name: 'etcd_image_tag',
-            defaultValue: '3.5.0-debian-10-r24'
+            defaultValue: "3.5.0-debian-10-r24"
         )        
         string(
             description: 'Pod Nums',
