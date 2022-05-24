@@ -95,6 +95,9 @@ pipeline {
                         yq -i '.queryNode.replicas = "${params.querynode_replica_nums}"' cluster-values.yaml
                         yq -i '.etcd.image.repository = "${params.etcd_image_repository}"' cluster-values.yaml
                         yq -i '.etcd.image.tag = "${params.etcd_image_tag}"' cluster-values.yaml
+
+                        yq -i '.etcd.image.repository = "${params.etcd_image_repository}"' standalone-values.yaml
+                        yq -i '.etcd.image.tag = "${params.etcd_image_tag}"' standalone-values.yaml
                         cat cluster-values.yaml
                         """
                         }
