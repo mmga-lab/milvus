@@ -44,7 +44,7 @@ pipeline {
         string(
             description: 'Etcd Image Repository',
             name: 'etcd_image_repository',
-            defaultValue: "docker.io/bitnami/etcd"
+            defaultValue: "bitnami/etcd"
         )
         string(
             description: 'Etcd Image Tag',
