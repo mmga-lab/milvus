@@ -21,11 +21,18 @@ class Op(Enum):
     index = 'index'
     search = 'search'
     query = 'query'
+    delete = 'delete'
+    compact = 'compact'
+    drop = 'drop'
+    load_balance = 'load_balance'
     bulk_load = 'bulk_load'
 
     unknown = 'unknown'
 
 
+default_nq = ct.default_nq
+default_dim = ct.default_dim
+vectors = [[random.random() for _ in range(default_dim)] for _ in range(default_nq)]
 timeout = 20
 enable_traceback = False
 
@@ -101,7 +108,7 @@ class SearchChecker(Checker):
                 self.rsp_times.append(t1 - t0)
                 self.average_time = ((t1 - t0) + self.average_time * self._succ) / (self._succ + 1)
                 self._succ += 1
-                log.debug(f"search success, time: {t1 - t0:.4f}, average_time: {self.average_time:.4f}")
+                log.info(f"search success, time: {t1 - t0:.4f}, average_time: {self.average_time:.4f}")
             else:
                 self._fail += 1
             sleep(constants.WAIT_PER_OP / 10)
@@ -129,7 +136,7 @@ class InsertFlushChecker(Checker):
                     self.rsp_times.append(t1 - t0)
                     self.average_time = ((t1 - t0) + self.average_time * self._succ) / (self._succ + 1)
                     self._succ += 1
-                    log.debug(f"insert success, time: {t1 - t0:.4f}, average_time: {self.average_time:.4f}")
+                    log.info(f"insert success, time: {t1 - t0:.4f}, average_time: {self.average_time:.4f}")
                 else:
                     self._fail += 1
                 sleep(constants.WAIT_PER_OP / 10)
@@ -250,11 +257,19 @@ class DeleteChecker(Checker):
             t0 = time.time()
             _, result = self.c_wrap.delete(expr=expr, timeout=timeout)
             tt = time.time() - t0
-            if result:
+            query_res, result = self.c_wrap.query(expr=expr)
+            search_res, result = self.c_wrap.search(data=cf.gen_vectors(1, ct.default_dim),
+                                                    anns_field=ct.default_float_vec_field_name,
+                                                    param={"nprobe": 32},
+                                                    limit=1,
+                                                    expr=expr,
+                                                    timeout=timeout)
+            delete_check = len(query_res) == 0 and len(search_res[0]) == 0
+            if result and delete_check:
                 self.rsp_times.append(tt)
                 self.average_time = (tt + self.average_time * self._succ) / (self._succ + 1)
                 self._succ += 1
-                log.debug(f"delete success, time: {tt:.4f}, average_time: {self.average_time:.4f}")
+                log.info(f"delete success, time: {tt:.4f}, average_time: {self.average_time:.4f}")
             else:
                 self._fail += 1
             sleep(constants.WAIT_PER_OP / 10)
@@ -273,7 +288,7 @@ class CompactChecker(Checker):
             seg_info = self.ut.get_query_segment_info(self.c_wrap.name)
             t0 = time.time()
             res, result = self.c_wrap.compact(timeout=timeout)
-            print(f"compact done: res {res}")
+            # print(f"compact done: res {res}")
             self.c_wrap.wait_for_compaction_completed()
             self.c_wrap.get_compaction_plans()
             t1 = time.time()
@@ -281,7 +296,7 @@ class CompactChecker(Checker):
                 self.rsp_times.append(t1 - t0)
                 self.average_time = ((t1 - t0) + self.average_time * self._succ) / (self._succ + 1)
                 self._succ += 1
-                log.debug(f"compact success, time: {t1 - t0:.4f}, average_time: {self.average_time:.4f}")
+                log.info(f"compact success, time: {t1 - t0:.4f}, average_time: {self.average_time:.4f}")
             else:
                 self._fail += 1
             sleep(constants.WAIT_PER_OP / 10)
@@ -292,8 +307,10 @@ class DropChecker(Checker):
 
     def __init__(self, collection_name=None):
         super().__init__(collection_name=collection_name)
-        # self.c_wrap.load(enable_traceback=enable_traceback)  # load before compact
-
+        self.c_wrap.init_collection(
+            name=cf.gen_unique_str("DropChecker_"),
+            schema=cf.gen_default_collection_schema(),
+            timeout=timeout)
     def keep_running(self):
         while True:
             t0 = time.time()
@@ -303,7 +320,11 @@ class DropChecker(Checker):
                 self.rsp_times.append(t1 - t0)
                 self.average_time = ((t1 - t0) + self.average_time * self._succ) / (self._succ + 1)
                 self._succ += 1
-                log.debug(f"drop success, time: {t1 - t0:.4f}, average_time: {self.average_time:.4f}")
+                log.info(f"drop success, time: {t1 - t0:.4f}, average_time: {self.average_time:.4f}")
+                self.c_wrap.init_collection(
+                    name=cf.gen_unique_str("DropChecker_"),
+                    schema=cf.gen_default_collection_schema(),
+                    timeout=timeout)
             else:
                 self._fail += 1
             sleep(constants.WAIT_PER_OP / 10)
@@ -312,10 +333,10 @@ class DropChecker(Checker):
 class LoadBalanceChecker(Checker):
     """check loadbalance operations in a dependent thread"""
 
-    def __init__(self, collection_name=None):
+    def __init__(self, collection_name=None, replica_number=1):
         super().__init__(collection_name=collection_name)
         self.utility_wrap = ApiUtilityWrapper()
-        self.c_wrap.load(enable_traceback=enable_traceback)
+        self.c_wrap.load(replica_number=replica_number, enable_traceback=enable_traceback)
 
     def keep_running(self):
         while True:
@@ -328,10 +349,14 @@ class LoadBalanceChecker(Checker):
                 if len(g.group_nodes) >= 2:
                     group_nodes = list(g.group_nodes)
                     break
-            src_node_id = group_nodes[0]
-            dst_node_ids = group_nodes[1:]
             res, _ = self.utility_wrap.get_query_segment_info(c_name)
             segment_distribution = cf.get_segment_distribution(res)
+            group_nodes = sorted(group_nodes,
+                                 key=lambda x: len(
+                                     segment_distribution[x]["sealed"])
+                                 if x in segment_distribution else 0, reverse=True)
+            src_node_id = group_nodes[0]
+            dst_node_ids = group_nodes[1:]
             sealed_segment_ids = segment_distribution[src_node_id]["sealed"]
             # load balance
             t0 = time.time()
@@ -353,7 +378,7 @@ class LoadBalanceChecker(Checker):
                 self.rsp_times.append(t1 - t0)
                 self.average_time = ((t1 - t0) + self.average_time * self._succ) / (self._succ + 1)
                 self._succ += 1
-                log.debug(f"load balance success, time: {t1 - t0:.4f}, average_time: {self.average_time:.4f}")
+                log.info(f"load balance success, time: {t1 - t0:.4f}, average_time: {self.average_time:.4f}")
             else:
                 self._fail += 1
             sleep(10)
@@ -362,9 +387,10 @@ class LoadBalanceChecker(Checker):
 class BulkLoadChecker(Checker):
     """check bulk load operations in a dependent thread"""
 
-    def __init__(self, flush=False):
-        super().__init__()
+    def __init__(self, collection_name=None, flush=False):
+        super().__init__(collection_name=collection_name)
         self.utility_wrap = ApiUtilityWrapper()
+        self.collection_name = collection_name
         self.schema = cf.gen_default_collection_schema()
         self.flush = flush
         self.files = ["bulk_load_data_source.json"]
@@ -386,7 +412,10 @@ class BulkLoadChecker(Checker):
                 c_name = self.failed_tasks.pop(0)
                 log.info(f"check failed task: {c_name}")
             else:
-                c_name = cf.gen_unique_str("BulkLoadChecker_")
+                if self.collection_name is not None:
+                    c_name = self.collection_name
+                else:
+                    c_name = cf.gen_unique_str("BulkLoadChecker_")
             self.c_wrap.init_collection(name=c_name, schema=self.schema)
             if self.flush:
                 t0 = time.time()

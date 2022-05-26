@@ -140,14 +140,14 @@ pipeline {
                                 IMAGE_TAG="${image_tag_modified}" \
                                 REPOSITORY="${params.image_repository}" \
                                 RELEASE_NAME="${env.RELEASE_NAME}" \
-                                bash install_milvus_standalone.sh
+                                bash install_milvus_standalone.sh || echo "installation not ready yet"
                                 """    
                             }else{   
                                 sh"""
                                 IMAGE_TAG="${image_tag_modified}" \
                                 REPOSITORY="${params.image_repository}" \
                                 RELEASE_NAME="${env.RELEASE_NAME}" \
-                                bash install_milvus_cluster.sh
+                                bash install_milvus_cluster.sh || echo "installation not ready yet"
                                 """
                             }
                             sh "kubectl wait --for=condition=Ready pod -l app.kubernetes.io/instance=${env.RELEASE_NAME} -n ${env.NAMESPACE} --timeout=360s"
@@ -266,14 +266,14 @@ pipeline {
                     dir ('tests/python_client/chaos') {
                         script {
                         def host = sh(returnStdout: true, script: "kubectl get svc/${env.RELEASE_NAME}-milvus -o jsonpath=\"{.spec.clusterIP}\"").trim()
-                        sh "python3 scripts/hello_milvus.py --host $host"        
-                        sh "kubectl get pods -o wide|grep ${env.RELEASE_NAME}"
+                        sh "pytest -s -v testcases/test_hello_milvus.py --host $host"
+                        sh "kubectl get pods|grep ${env.RELEASE_NAME}"
                         }
                     }
                 }
             } 
         }
-        stage ('Verify all collections after chaos') {
+         stage ('Verify all collections after chaos using script') {
             options {
               timeout(time: 10, unit: 'MINUTES')   // timeout on this stage
             }
@@ -284,6 +284,24 @@ pipeline {
                         def host = sh(returnStdout: true, script: "kubectl get svc/${env.RELEASE_NAME}-milvus -o jsonpath=\"{.spec.clusterIP}\"").trim()
                         sh "python3 scripts/verify_all_collections.py --host $host"
                         sh "kubectl get pods -o wide|grep ${env.RELEASE_NAME}"
+                        }
+                    }
+                }
+            } 
+        } 
+
+        stage ('Verify all collections after chaos using pytest') {
+            options {
+              timeout(time: 10, unit: 'MINUTES')   // timeout on this stage
+            }
+            steps {
+                container('main') {
+                    dir ('tests/python_client/chaos') {
+                        script {
+                        def host = sh(returnStdout: true, script: "kubectl get svc/${env.RELEASE_NAME}-milvus -o jsonpath=\"{.spec.clusterIP}\"").trim()
+                        sh "python3 scripts/get_all_collections.py --host $host"
+                        sh "pytest -s -v testcases/test_all_collection.py -x --host $host"
+                        sh "kubectl get pods|grep ${env.RELEASE_NAME}"
                         }
                     }
                 }

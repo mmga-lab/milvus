@@ -115,6 +115,7 @@ class TestChaos(TestChaosBase):
         self.host = host
         self.port = port
 
+
     @pytest.fixture(scope="function", autouse=True)
     def init_health_checkers(self):
         checkers = {

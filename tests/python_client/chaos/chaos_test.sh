@@ -84,7 +84,7 @@ python3 scripts/hello_milvus.py --host "$host"
 # chaos test
 if [ "$chaos_task" == "chaos-test" ];
 then
-    pytest -s -v test_chaos.py --host "$host" --log-cli-level=INFO --capture=no || echo "chaos test fail"
+    pytest -s -v test_chaos_all_checkers.py --host "$host" --log-cli-level=INFO --capture=no || echo "chaos test fail"
 fi
 # data consist test
 if [ "$chaos_task" == "data-consist-test" ];
@@ -97,8 +97,8 @@ kubectl wait --for=condition=Ready pod -l app.kubernetes.io/instance=${release} 
 kubectl wait --for=condition=Ready pod -l release=${release} -n ${ns} --timeout=360s
 
 pytest -s -v ../testcases/test_e2e.py --host "$host" --log-cli-level=INFO --capture=no || echo "e2e test fail"
-python3 scripts/hello_milvus.py --host "$host" || echo "e2e test fail"
-
+python3 scripts/hello_milvus.py --host "$host" || echo "hello_milvus test fail"
+python3 scripts/verify_all_collections.py --host "$host" || echo "verify_all_collections test fail"
 # save logs
 cur_time=$(date +%Y-%m-%d-%H-%M-%S)
 bash ../../scripts/export_log_k8s.sh ${ns} ${release} k8s_log/${pod}-${chaos_type}-${chaos_task}-${cur_time}

@@ -87,6 +87,12 @@ def get_pod_list(namespace, label_selector):
         raise Exception(str(e))
 
 
+def get_current_namespace():
+    config.load_kube_config()
+    current_namespace = config.list_kube_config_contexts()[1]['context']['namespace']
+    return current_namespace
+
+
 def get_pod_ip_name_pairs(namespace, label_selector):
     """
     get pod ip name pairs with label selector
