@@ -48,6 +48,16 @@ pipeline {
             name: 'new_image_tag',
             defaultValue: 'master-latest'
         )
+         string(
+            description: 'Etcd Image Repository',
+            name: 'etcd_image_repository',
+            defaultValue: "bitnami/etcd"
+        )
+        string(
+            description: 'Etcd Image Tag',
+            name: 'etcd_image_tag',
+            defaultValue: "3.5.0-debian-10-r24"
+        )       
         string(
             description: 'Data Size',
             name: 'data_size',
@@ -83,6 +93,23 @@ pipeline {
                     }
                 }
             }
+        }
+        stage ('Modify Milvus chart values') {
+            steps {
+                container('main') {
+                    dir ('tests/python_client/deploy') {
+                        script {
+                        sh """
+                        yq -i '.etcd.image.repository = "${params.etcd_image_repository}"' cluster-values.yaml
+                        yq -i '.etcd.image.tag = "${params.etcd_image_tag}"' cluster-values.yaml
+                        yq -i '.etcd.image.repository = "${params.etcd_image_repository}"' standalone-values.yaml
+                        yq -i '.etcd.image.tag = "${params.etcd_image_tag}"' standalone-values.yaml
+                        cat cluster-values.yaml
+                        """
+                        }
+                        }
+                    }
+                }
         }
         stage ('First Milvus Deployment') {
             options {
