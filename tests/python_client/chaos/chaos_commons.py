@@ -1,6 +1,9 @@
+from collections import defaultdict
+import json
 import os
 import threading
 import glob
+from pymilvus import connections, list_collections
 from chaos import constants
 from yaml import full_load
 from utils.util_log import test_log as log
@@ -72,3 +75,36 @@ def reconnect(connections, alias='default'):
     res = connections.get_connection_addr(alias)
     connections.remove_connection(alias)
     return connections.connect(alias, host=res["host"], port=res["port"])
+
+def save_collections_by_marker(host="127.0.0.1", port="19530", marker="Checker"):
+    # create connection
+    connections.connect(host=host, port=port)
+    all_collections = list_collections()
+    all_collections = [c_name for c_name in all_collections if marker in c_name]
+    m = defaultdict(list)
+    for c_name in all_collections:
+        prefix = c_name.split("_")[0]
+        if len(m[prefix]) <= 10:
+            m[prefix].append(c_name)
+    selected_collections = []
+    for v in m.values():
+        selected_collections.extend(v)
+    data = {
+        "all": selected_collections
+    }
+    print("selected_collections is")
+    print(selected_collections)
+    with open("/tmp/ci_logs/all_collections.json", "w") as f:
+        f.write(json.dumps(data))
+    return selected_collections
+
+
+def get_all_collections():
+    try:
+        with open("/tmp/ci_logs/all_collections.json", "r") as f:
+            data = json.load(f)
+            all_collections = data["all"]
+    except Exception as e:
+        log.error(f"get_all_collections error: {e}")
+        return []
+    return all_collections
