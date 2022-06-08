@@ -182,18 +182,18 @@ pipeline {
         }
         stage ('Run first test') {
             options {
-              timeout(time: 30, unit: 'MINUTES')   // timeout on this stage
+              timeout(time: 5, unit: 'MINUTES')   // timeout on this stage
             }           
             steps {
                 container('main') {
-                    dir ('tests/python_client/deploy') {                                     
+                    dir ('tests/python_client/chaos') {
                         script {
                         def host = sh(returnStdout: true, script: "kubectl get svc/${env.RELEASE_NAME}-milvus -o jsonpath=\"{.spec.clusterIP}\"").trim()
-                        sh "pytest -s -v ../testcases/test_e2e.py --host $host --log-cli-level=INFO --capture=no"  
-
+                        sh "python3 scripts/hello_milvus.py --host $host"          
                         }
                     }
                 }
+            }
             }
             
         }
