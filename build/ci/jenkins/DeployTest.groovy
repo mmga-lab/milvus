@@ -186,10 +186,10 @@ pipeline {
             }           
             steps {
                 container('main') {
-                    dir ('tests/python_client/chaos') {
+                    dir ('tests/python_client/deploy') {
                         script {
                         def host = sh(returnStdout: true, script: "kubectl get svc/${env.RELEASE_NAME}-milvus -o jsonpath=\"{.spec.clusterIP}\"").trim()
-                        sh "python3 scripts/hello_milvus.py --host $host"          
+                        sh "python3 scripts/action_before_reinstall.py --host $host"          
                         }
                     }
                 }
@@ -267,11 +267,11 @@ pipeline {
               timeout(time: 5, unit: 'MINUTES')   // timeout on this stage
             }           
             steps {
-                container('main') {
-                    dir ('tests/python_client/chaos') {
+               container('main') {
+                    dir ('tests/python_client/deploy') {
                         script {
                         def host = sh(returnStdout: true, script: "kubectl get svc/${env.RELEASE_NAME}-milvus -o jsonpath=\"{.spec.clusterIP}\"").trim()
-                        sh "python3 scripts/hello_milvus.py --host $host"          
+                        sh "python3 scripts/action_before_reinstall.py --host $host"          
                         }
                     }
                 }
