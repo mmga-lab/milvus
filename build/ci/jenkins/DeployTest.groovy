@@ -196,7 +196,6 @@ pipeline {
             }
             }
             
-        }
 
         stage ('Milvus Idle Time') {
 
@@ -265,21 +264,14 @@ pipeline {
 
         stage ('Run Second Test') {
             options {
-              timeout(time: 30, unit: 'MINUTES')   // timeout on this stage
-            }
+              timeout(time: 5, unit: 'MINUTES')   // timeout on this stage
+            }           
             steps {
                 container('main') {
-                    dir ('tests/python_client/deploy/scripts') {
+                    dir ('tests/python_client/chaos') {
                         script {
-                        sh "sleep 60s" // wait loading data for the second deployment to be ready
                         def host = sh(returnStdout: true, script: "kubectl get svc/${env.RELEASE_NAME}-milvus -o jsonpath=\"{.spec.clusterIP}\"").trim()
-                        if ("${params.deploy_task}" == "reinstall") {
-                            sh "python3 action_after_reinstall.py --host ${host} --data_size ${params.data_size}"
-                        }
-
-                        if ("${params.deploy_task}" == "upgrade") {
-                            sh "python3 action_after_upgrade.py --host ${host} --data_size ${params.data_size}"
-                        }
+                        sh "python3 scripts/hello_milvus.py --host $host"          
                         }
                     }
                 }
