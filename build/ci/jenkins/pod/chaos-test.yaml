@@ -13,11 +13,11 @@ spec:
     tty: true
     resources:
       limits:
-        memory: 16Gi
-        cpu: 8.0
+        memory: 6Gi
+        cpu: 2.0
       requests:
-        memory: 12Gi
-        cpu: 8.0
+        memory: 4Gi
+        cpu: 2.0
     volumeMounts:
     - name: qa-kubeconfig
       mountPath: /root/.kube/
@@ -33,5 +33,3 @@ spec:
     secret:
       secretName: qa-kubeconfig
   serviceAccountName: account-milvus-test
-  nodeSelector:
-    kubernetes.io/hostname: qa-node001.zilliz.local
