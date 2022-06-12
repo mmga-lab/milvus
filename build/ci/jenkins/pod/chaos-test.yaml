@@ -33,3 +33,5 @@ spec:
     secret:
       secretName: qa-kubeconfig
   serviceAccountName: account-milvus-test
+  nodeSelector:
+    kubernetes.io/hostname: "qa-node001.zilliz.local"
