@@ -1,3 +1,5 @@
+#!/usr/bin/env bash
+
 # Licensed to the LF AI & Data foundation under one
 # or more contributor license agreements. See the NOTICE file
 # distributed with this work for additional information
@@ -13,6 +15,16 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+
+if [[ "$OSTYPE" == "linux-gnu"* ]]; then
+  LIBJEMALLOC=$PWD/internal/core/output/lib/libjemalloc.so
+  if test -f "$LIBJEMALLOC"; then
+    #echo "Found $LIBJEMALLOC"
+    export LD_PRELOAD="$LIBJEMALLOC"
+  else
+    echo "WARN: Cannot find $LIBJEMALLOC"
+  fi
+fi
 
 echo "Starting rootcoord..."
 nohup ./bin/milvus run rootcoord > /tmp/rootcoord.log 2>&1 &

@@ -20,7 +20,6 @@ require (
 	github.com/facebookgo/subset v0.0.0-20200203212716-c811ad88dec4 // indirect
 	github.com/gin-gonic/gin v1.7.7
 	github.com/go-basic/ipv4 v1.0.0
-	github.com/go-sql-driver/mysql v1.6.0 // indirect
 	github.com/gofrs/flock v0.8.1
 	github.com/golang-jwt/jwt/v4 v4.4.1 // indirect
 	github.com/golang/mock v1.5.0
@@ -36,6 +35,7 @@ require (
 	github.com/pierrec/lz4 v2.5.2+incompatible // indirect
 	github.com/pkg/errors v0.9.1
 	github.com/prometheus/client_golang v1.11.0
+	github.com/quasilyte/go-ruleguard/dsl v0.3.21 // indirect
 	github.com/sbinet/npyio v0.6.0
 	github.com/shirou/gopsutil v3.21.8+incompatible
 	github.com/spaolacci/murmur3 v1.1.0
