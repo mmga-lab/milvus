@@ -252,9 +252,29 @@ pipeline {
                 container('main') {
                     dir ('tests/python_client/deploy') {                                     
                         script {
-                        def host = sh(returnStdout: true, script: "kubectl get svc/${env.RELEASE_NAME}-milvus -o jsonpath=\"{.spec.clusterIP}\"").trim()
-                        sh "pytest -s -v ../testcases/test_e2e.py --host $host --log-cli-level=INFO --capture=no"  
 
+                            // in case of master-latest is different in two stages, we need use the new_image_tag_modified.txt to store the new_image_tag in first stage
+                            def new_image_tag_modified = ""
+
+                            dir ("new_image_tag_modified"){
+                                try{
+                                    unstash 'new_image_tag_modified'
+                                    new_image_tag_modified=sh(returnStdout: true, script: 'cat new_image_tag_modified.txt | tr -d \'\n\r\'')
+                                }catch(e){
+                                    print "No image tag info remained"
+                                    exit 1
+                                }
+                            }
+
+                            if ("${params.milvus_mode}" == "standalone") {
+                                sh "helm upgrade --wait --timeout 720s ${env.RELEASE_NAME} milvus/milvus  --set image.all.repository=${params.new_image_repository} --set image.all.tag=${new_image_tag_modified} -f standalone-values.yaml"    
+                            }
+                            if ("${params.milvus_mode}" == "cluster") {
+                                sh "helm upgrade --wait --timeout 720s ${env.RELEASE_NAME} milvus/milvus  --set image.all.repository=${params.new_image_repository} --set image.all.tag=${new_image_tag_modified} -f cluster-values.yaml"    
+                            }
+                            sh "kubectl wait --for=condition=Ready pod -l app.kubernetes.io/instance=${env.RELEASE_NAME} -n ${env.NAMESPACE} --timeout=360s"
+                            sh "kubectl wait --for=condition=Ready pod -l release=${env.RELEASE_NAME} -n ${env.NAMESPACE} --timeout=360s"                               
+                            sh "kubectl get pods -o wide|grep ${env.RELEASE_NAME}"
                         }
                     }
                 }
