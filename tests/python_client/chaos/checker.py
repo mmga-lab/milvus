@@ -300,15 +300,15 @@ class DeleteChecker(Checker):
             collection_name = cf.gen_unique_str("DeleteChecker_")
         super().__init__(collection_name=collection_name)
         self.c_wrap.load()  # load before query
+        term_expr = f"{ct.default_int64_field_name} > 0"
+        res, _ = self.c_wrap.query(
+            term_expr, output_fields=[ct.default_int64_field_name]
+        )
+        self.ids = [r[ct.default_int64_field_name] for r in res]
 
     def keep_running(self):
         while True:
-            term_expr = f"{ct.default_int64_field_name} > 0"
-            res, _ = self.c_wrap.query(
-                term_expr, output_fields=[ct.default_int64_field_name]
-            )
-            ids = [r[ct.default_int64_field_name] for r in res]
-            delete_ids = random.sample(ids, 2)
+            delete_ids = [self.ids.pop()]
             expr = f"{ct.default_int64_field_name} in {delete_ids}"
             t0 = time.time()
             _, result = self.c_wrap.delete(expr=expr, timeout=timeout)

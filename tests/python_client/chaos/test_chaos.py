@@ -7,7 +7,7 @@ from time import sleep
 
 from pymilvus import connections
 from chaos.checker import (CreateChecker, InsertFlushChecker,
-                           SearchChecker, QueryChecker, IndexChecker, Op)
+                           SearchChecker, QueryChecker, IndexChecker, DeleteChecker, Op)
 from common.cus_resource_opts import CustomResourceOperations as CusResource
 from utils.util_log import test_log as log
 from utils.util_k8s import wait_pods_ready, get_pod_list
@@ -107,7 +107,8 @@ class TestChaos(TestChaosBase):
             Op.flush: InsertFlushChecker(flush=True),
             Op.index: IndexChecker(),
             Op.search: SearchChecker(),
-            Op.query: QueryChecker()
+            Op.query: QueryChecker(),
+            Op.delete: DeleteChecker()
         }
         self.health_checkers = checkers
 
