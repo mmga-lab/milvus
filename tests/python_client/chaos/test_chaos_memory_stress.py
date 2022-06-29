@@ -9,7 +9,7 @@ import datetime
 from pymilvus import connections
 from base.collection_wrapper import ApiCollectionWrapper
 from base.utility_wrapper import ApiUtilityWrapper
-from chaos.checker import Op, CreateChecker, InsertFlushChecker, IndexChecker, SearchChecker, QueryChecker
+from chaos.checker import Op, CreateChecker, InsertChecker, FlushChecker, IndexChecker, SearchChecker, QueryChecker
 from common.cus_resource_opts import CustomResourceOperations as CusResource
 from common import common_func as cf
 from common import common_type as ct
@@ -216,8 +216,8 @@ class TestChaosData:
         """
         mic_checkers = {
             Op.create: CreateChecker(),
-            Op.insert: InsertFlushChecker(),
-            Op.flush: InsertFlushChecker(flush=True),
+            Op.insert: InsertChecker(),
+            Op.flush: FlushChecker(),
             Op.index: IndexChecker(),
             Op.search: SearchChecker(),
             Op.query: QueryChecker()

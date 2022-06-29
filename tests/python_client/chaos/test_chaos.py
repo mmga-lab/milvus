@@ -6,7 +6,7 @@ import json
 from time import sleep
 
 from pymilvus import connections
-from chaos.checker import (CreateChecker, InsertFlushChecker,
+from chaos.checker import (CreateChecker, InsertChecker, FlushChecker,
                            SearchChecker, QueryChecker, IndexChecker, Op)
 from common.cus_resource_opts import CustomResourceOperations as CusResource
 from utils.util_log import test_log as log
@@ -103,8 +103,8 @@ class TestChaos(TestChaosBase):
     def init_health_checkers(self):
         checkers = {
             Op.create: CreateChecker(),
-            Op.insert: InsertFlushChecker(),
-            Op.flush: InsertFlushChecker(flush=True),
+            Op.insert: InsertChecker(),
+            Op.flush: FlushChecker(),
             Op.index: IndexChecker(),
             Op.search: SearchChecker(),
             Op.query: QueryChecker()

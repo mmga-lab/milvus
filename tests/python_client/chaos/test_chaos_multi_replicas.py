@@ -8,7 +8,7 @@ from pathlib import Path
 from time import sleep
 
 from pymilvus import connections
-from chaos.checker import (InsertFlushChecker, SearchChecker, QueryChecker, Op)
+from chaos.checker import (InsertChecker, FlushChecker, SearchChecker, QueryChecker, Op)
 from common.cus_resource_opts import CustomResourceOperations as CusResource
 from common.milvus_sys import MilvusSys
 from utils.util_log import test_log as log

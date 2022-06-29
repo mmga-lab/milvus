@@ -9,7 +9,7 @@ from time import sleep
 from pathlib import Path
 from minio import Minio
 from pymilvus import connections
-from chaos.checker import (InsertFlushChecker, SearchChecker, QueryChecker, BulkLoadChecker, Op)
+from chaos.checker import (InsertChecker, FlushChecker, SearchChecker, QueryChecker, BulkLoadChecker, Op)
 from common.cus_resource_opts import CustomResourceOperations as CusResource
 from common.milvus_sys import MilvusSys
 from utils.util_log import test_log as log
@@ -84,7 +84,7 @@ class TestChaos(TestChaosBase):
 	def init_health_checkers(self):
 		log.info("init health checkers")
 		checkers = {
-			# Op.insert: InsertFlushChecker(collection_name=c_name),
+			# Op.insert: InsertChecker(collection_name=c_name),
 			# Op.search: SearchChecker(collection_name=c_name, replica_number=2),
 			Op.bulk_load: BulkLoadChecker()
 			# Op.query: QueryChecker(collection_name=c_name, replica_number=2)
