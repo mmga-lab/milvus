@@ -137,13 +137,12 @@ def load_and_search(prefix, replicas=1):
     for col_name in col_list:
         c = Collection(name=col_name)
         print(f"collection name: {col_name}")
-        print("release collection")
-        c.release()
         print("load collection")
         t0 = time.time()
         if replicas == 1:
             c.load()
         if replicas > 1:
+            c.release()
             c.load(replica_number=replicas)
             print(c.get_replicas())
         print(f"load time: {time.time() - t0:.4f}")
