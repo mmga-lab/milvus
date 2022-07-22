@@ -214,7 +214,7 @@ jobs:
           from: GitHub Actions
 
       - name: Upload logs
-        if: ${{ ! success() }}
+        if: ${{ always() }}
         uses: actions/upload-artifact@v2
         with:
           name: docker-compose-logs-${{ matrix.mode }}-${{ matrix.task }}
@@ -286,12 +286,12 @@ jobs:
           # for cluster mode
           if [ ${{ matrix.task }} == "reinstall" ] && [ ${{ matrix.mode }} == "cluster" ]; then
               echo "task: ${{ matrix.task }} mode: ${{ matrix.mode }}";
-              helm install --wait --timeout 720s deploy-testing milvus/milvus -f cluster-values.yaml;
+              helm install --wait --timeout 720s deploy-testing milvus/milvus --set image.all.repository=milvusdb/milvus-dev --set image.all.tag=2.1.0-latest -f cluster-values.yaml;
           fi
           # for standalone mode
           if [ ${{ matrix.task }} == "reinstall" ] && [ ${{ matrix.mode }} == "standalone" ]; then
               echo "task: ${{ matrix.task }} mode: ${{ matrix.mode }}";
-              helm install --wait --timeout 720s deploy-testing milvus/milvus -f standalone-values.yaml;
+              helm install --wait --timeout 720s deploy-testing milvus/milvus --set image.all.repository=milvusdb/milvus-dev --set image.all.tag=2.1.0-latest -f standalone-values.yaml;
           fi
 
           # if the task is upgrade, install milvus with latest rc image in repo milvusdb/milvus
@@ -353,8 +353,8 @@ jobs:
         shell: bash
         working-directory: tests/python_client/deploy
         run: |
-          if [ ${{ matrix.mode }} == "cluster" ]; then helm install --wait --timeout 720s deploy-testing milvus/milvus -f cluster-values-second.yaml; fi
-          if [ ${{ matrix.mode }} == "standalone" ]; then helm upgrade --wait --timeout 720s deploy-testing milvus/milvus -f standalone-values.yaml; fi
+          if [ ${{ matrix.mode }} == "cluster" ]; then helm install --wait --timeout 720s deploy-testing milvus/milvus --set image.all.repository=milvusdb/milvus-dev --set image.all.tag=2.1.0-latest -f cluster-values-second.yaml; fi
+          if [ ${{ matrix.mode }} == "standalone" ]; then helm upgrade --wait --timeout 720s deploy-testing milvus/milvus --set image.all.repository=milvusdb/milvus-dev --set image.all.tag=2.1.0-latest -f standalone-values.yaml; fi
           kubectl get pods
           sleep 20s
           kubectl get pods
@@ -383,7 +383,7 @@ jobs:
           bash ../../scripts/export_log_k8s.sh default deploy-testing k8s_logs/second_deploy
 
       - name: Upload logs
-        if: ${{ ! success() }}
+        if: ${{ always() }}
         uses: actions/upload-artifact@v2
         with:
           name: helm-log-${{ matrix.mq_type }}-${{ matrix.mode }}-${{ matrix.task }}
