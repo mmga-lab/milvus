@@ -26,7 +26,7 @@ on:
       new_image_tag:
         description: The new image tag to use for the deploy test
         required: true
-        default: '2.1.0-latest'
+        default: '2.1.0-20220722-a34f635b'
 
   schedule:
     # * is a special character in YAML so you have to quote this string
@@ -58,7 +58,7 @@ jobs:
           DEFAULT_OLD_IMAGE_TAG: "v2.0.2"
           DEFAULT_PREVIOUS_RELEASE_VERSION: "v2.0.2"
           DEFAULT_NEW_IMAGE_REPO: "milvusdb/milvus-dev"
-          DEFAULT_NEW_IMAGE_TAG: "2.1.0-latest"
+          DEFAULT_NEW_IMAGE_TAG: "2.1.0-20220722-a34f635b"
         run: |
           echo "OLD_IMAGE_REPO=${{ github.event.inputs.old_image_repo || env.DEFAULT_OLD_IMAGE_REPO }}" >> $GITHUB_ENV
           echo "OLD_IMAGE_TAG=${{ github.event.inputs.old_image_tag || env.DEFAULT_OLD_IMAGE_TAG }}" >> $GITHUB_ENV
@@ -286,12 +286,12 @@ jobs:
           # for cluster mode
           if [ ${{ matrix.task }} == "reinstall" ] && [ ${{ matrix.mode }} == "cluster" ]; then
               echo "task: ${{ matrix.task }} mode: ${{ matrix.mode }}";
-              helm install --wait --timeout 720s deploy-testing milvus/milvus --set image.all.repository=milvusdb/milvus-dev --set image.all.tag=2.1.0-latest -f cluster-values.yaml;
+              helm install --wait --timeout 720s deploy-testing milvus/milvus --set image.all.repository=milvusdb/milvus-dev --set image.all.tag=2.1.0-20220722-a34f635b -f cluster-values.yaml;
           fi
           # for standalone mode
           if [ ${{ matrix.task }} == "reinstall" ] && [ ${{ matrix.mode }} == "standalone" ]; then
               echo "task: ${{ matrix.task }} mode: ${{ matrix.mode }}";
-              helm install --wait --timeout 720s deploy-testing milvus/milvus --set image.all.repository=milvusdb/milvus-dev --set image.all.tag=2.1.0-latest -f standalone-values.yaml;
+              helm install --wait --timeout 720s deploy-testing milvus/milvus --set image.all.repository=milvusdb/milvus-dev --set image.all.tag=2.1.0-20220722-a34f635b -f standalone-values.yaml;
           fi
 
           # if the task is upgrade, install milvus with latest rc image in repo milvusdb/milvus
@@ -353,8 +353,8 @@ jobs:
         shell: bash
         working-directory: tests/python_client/deploy
         run: |
-          if [ ${{ matrix.mode }} == "cluster" ]; then helm install --wait --timeout 720s deploy-testing milvus/milvus --set image.all.repository=milvusdb/milvus-dev --set image.all.tag=2.1.0-latest -f cluster-values-second.yaml; fi
-          if [ ${{ matrix.mode }} == "standalone" ]; then helm upgrade --wait --timeout 720s deploy-testing milvus/milvus --set image.all.repository=milvusdb/milvus-dev --set image.all.tag=2.1.0-latest -f standalone-values.yaml; fi
+          if [ ${{ matrix.mode }} == "cluster" ]; then helm install --wait --timeout 720s deploy-testing milvus/milvus --set image.all.repository=milvusdb/milvus-dev --set image.all.tag=2.1.0-20220722-a34f635b -f cluster-values-second.yaml; fi
+          if [ ${{ matrix.mode }} == "standalone" ]; then helm upgrade --wait --timeout 720s deploy-testing milvus/milvus --set image.all.repository=milvusdb/milvus-dev --set image.all.tag=2.1.0-20220722-a34f635b -f standalone-values.yaml; fi
           kubectl get pods
           sleep 20s
           kubectl get pods
