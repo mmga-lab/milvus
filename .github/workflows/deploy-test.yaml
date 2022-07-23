@@ -11,7 +11,7 @@ on:
       old_image_tag:
         description: The old image tag to use for the deploy test
         required: true
-        default: 'latest'
+        default: 'v2.0.2'
 
       previous_release_version:
         description: The previous release version to use for the deploy test
@@ -55,7 +55,7 @@ jobs:
       - name: Set env param
         env:
           DEFAULT_OLD_IMAGE_REPO: "milvusdb/milvus"
-          DEFAULT_OLD_IMAGE_TAG: "latest"
+          DEFAULT_OLD_IMAGE_TAG: "v2.0.2"
           DEFAULT_PREVIOUS_RELEASE_VERSION: "v2.0.2"
           DEFAULT_NEW_IMAGE_REPO: "milvusdb/milvus-dev"
           DEFAULT_NEW_IMAGE_TAG: "2.1.0-latest"
@@ -297,11 +297,11 @@ jobs:
           # if the task is upgrade, install milvus with latest rc image in repo milvusdb/milvus
           if [ ${{ matrix.task }} == "upgrade" ] && [ ${{ matrix.mode }} == "cluster" ]; then
               echo "task: ${{ matrix.task }} mode: ${{ matrix.mode }}";
-              helm install --wait --timeout 720s deploy-testing milvus/milvus --set image.all.repository=milvusdb/milvus --set image.all.tag=latest --set etcd.image.repository=bitnami/etcd --set etcd.image.tag=3.5.0-debian-10-r24 -f cluster-values.yaml;
+              helm install --wait --timeout 720s deploy-testing milvus/milvus --set image.all.repository=milvusdb/milvus --set image.all.tag=v2.0.2 --set etcd.image.repository=bitnami/etcd --set etcd.image.tag=3.5.0-debian-10-r24 -f cluster-values.yaml;
           fi
           if [ ${{ matrix.task }} == "upgrade" ] && [ ${{ matrix.mode }} == "standalone" ]; then
               echo "task: ${{ matrix.task }} mode: ${{ matrix.mode }}";
-              helm install --wait --timeout 720s deploy-testing milvus/milvus --set image.all.repository=milvusdb/milvus --set image.all.tag=latest --set etcd.image.repository=bitnami/etcd --set etcd.image.tag=3.5.0-debian-10-r24 -f standalone-values.yaml;
+              helm install --wait --timeout 720s deploy-testing milvus/milvus --set image.all.repository=milvusdb/milvus --set image.all.tag=v2.0.2 --set etcd.image.repository=bitnami/etcd --set etcd.image.tag=3.5.0-debian-10-r24 -f standalone-values.yaml;
           fi
 
           kubectl get pods
