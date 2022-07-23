@@ -143,7 +143,7 @@ jobs:
           docker-compose ps -a
 
           echo "sleep 120s for the second deployment to be ready"
-          sleep 120s
+          sleep 180s
       - name: Run second test
         timeout-minutes: 15
         shell: bash
