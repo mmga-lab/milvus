@@ -141,7 +141,7 @@ pipeline {
                             sh "helm repo add milvus https://milvus-io.github.io/milvus-helm"
                             sh "helm repo update"
                             def pod_name = "${params.pod_name}"
-                            if (pod_name.containes("standalone")){
+                            if (pod_name.contains("standalone")){
                                 sh"""
                                 IMAGE_TAG="${image_tag_modified}" \
                                 REPOSITORY="${params.image_repository}" \
