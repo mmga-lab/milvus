@@ -140,7 +140,8 @@ pipeline {
                             sh "echo ${params.chaos_type}"
                             sh "helm repo add milvus https://milvus-io.github.io/milvus-helm"
                             sh "helm repo update"
-                            if ("${params.pod_name}" == "standalone"){
+                            def pod_name = "${params.pod_name}"
+                            if ("${pod_name}".containes("standalone")){
                                 sh"""
                                 IMAGE_TAG="${image_tag_modified}" \
                                 REPOSITORY="${params.image_repository}" \
