@@ -6,6 +6,7 @@ pipeline {
     agent {
         kubernetes {
             label "milvus-test"
+            inheritFrom 'default'
             defaultContainer 'main'
             yamlFile "build/ci/jenkins/pod/chaos-test.yaml"
             customWorkspace '/home/jenkins/agent/workspace'
