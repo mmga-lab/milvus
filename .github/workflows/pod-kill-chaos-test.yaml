@@ -22,7 +22,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        pod: [standalone, standalone, standalone, standalone, standalone, standalone, standalone, standalone, standalone, standalone, standalone, standalone]
+        pod: [allstandalone, allcluster, standalone, datacoord, datanode, indexcoord, indexnode, proxy, pulsar, querycoord, querynode, rootcoord, etcd, minio]
     
     steps:
 
