@@ -21,7 +21,6 @@ kafka:
   enabled: false
   name: kafka
   replicaCount: 3
-  defaultReplicationFactor: 2
 
 pulsar:
   enabled: true
