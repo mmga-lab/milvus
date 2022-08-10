@@ -61,6 +61,7 @@ def get_collections(prefix, check=False):
     # list entities if collections
     for name in col_list:
         c = Collection(name=name)
+        c.flush()
         num_entities = c.num_entities
         print(f"{name}: {num_entities}")
         if check:
@@ -103,6 +104,7 @@ def create_collections_and_insert_data(prefix, flush=True, count=3000, collectio
         print(f"end insert, time: {total_time:.4f}")
         if flush:
             print("Get collection entities")
+            collection.flush()
             start_time = time.time()
             print(f"collection entities: {collection.num_entities}")
             end_time = time.time()

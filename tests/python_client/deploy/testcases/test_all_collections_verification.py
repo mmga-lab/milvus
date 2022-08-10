@@ -114,6 +114,7 @@ class TestActionBeforeReinstall(TestDeployBase):
                         check_task=CheckTasks.check_query_not_empty)
 
         # flush
+        collection_w.flush()
         collection_w.num_entities
 
         # search and query
@@ -131,6 +132,7 @@ class TestActionBeforeReinstall(TestDeployBase):
         for i in range(2):
             self.init_collection_general(insert_data=True, is_binary=is_binary, nb=data_size,
                                          is_flush=False, is_index=True, name=name)
+        collection_w.flush()
         collection_w.num_entities
         
         # delete data
