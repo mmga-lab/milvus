@@ -102,21 +102,34 @@ class TestActionBeforeReinstall(TestDeployBase):
         if replicas_loaded == 0:
             collection_w.load()
         
-        # search and query    
+        # search and query
+        if "empty" in collection_name:
+            check_task = None
+        else:
+            check_task = CheckTasks.check_search_results
+        
         collection_w.search(vectors_to_search[:default_nq], default_search_field,
                             search_params, default_limit,
                             default_search_exp,
                             output_fields=[ct.default_int64_field_name],
-                            check_task=CheckTasks.check_search_results,
+                            check_task=check_task,
                             check_items={"nq": default_nq,
                                         "limit": default_limit})
+        if "empty" in collection_name:
+            check_task = None
+        else:
+            check_task = CheckTasks.check_query_not_empty
         collection_w.query(default_term_expr, output_fields=[ct.default_int64_field_name],
-                        check_task=CheckTasks.check_query_not_empty)
+                        check_task=check_task)
 
         # flush
         collection_w.num_entities
 
         # search and query
+        if "empty" in collection_name:
+            check_task = None
+        else:
+            check_task = CheckTasks.check_search_results
         collection_w.search(vectors_to_search[:default_nq], default_search_field,
                             search_params, default_limit,
                             default_search_exp,
@@ -124,8 +137,12 @@ class TestActionBeforeReinstall(TestDeployBase):
                             check_task=CheckTasks.check_search_results,
                             check_items={"nq": default_nq,
                                         "limit": default_limit})
+        if "empty" in collection_name:
+            check_task = None
+        else:
+            check_task = CheckTasks.check_query_not_empty
         collection_w.query(default_term_expr, output_fields=[ct.default_int64_field_name],
-                        check_task=CheckTasks.check_query_not_empty)
+                        check_task=check_task)
         
         # insert data and flush
         for i in range(2):

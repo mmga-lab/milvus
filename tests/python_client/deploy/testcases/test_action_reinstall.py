@@ -36,21 +36,23 @@ class TestActionBeforeReinstall(TestDeployBase):
         log.info("skip drop collection")
 
     @pytest.mark.tags(CaseLabel.L3)
-    def test_task_all_empty(self):
+    @pytest.mark.parametrize("is_binary", [True, False])
+    def test_task_all_empty(self,is_binary):
         """
         before reinstall: create collection
         """
-        name = cf.gen_unique_str(prefix)
-        self.init_collection_general(insert_data=False, name=name)[0]
+        name = cf.gen_unique_str(prefix) + "empty"
+        self.init_collection_general(insert_data=False, is_binary=is_binary, name=name)[0]
+
 
     @pytest.mark.tags(CaseLabel.L3)
-    @pytest.mark.parametrize("replica_number", [1])
-    @pytest.mark.parametrize("is_compacted", ["is_compacted"])
-    @pytest.mark.parametrize("is_deleted", ["is_deleted"])
+    @pytest.mark.parametrize("replica_number", [0,1,2])
+    @pytest.mark.parametrize("is_compacted", ["is_compacted","not_compacted"])
+    @pytest.mark.parametrize("is_deleted", ["is_deleted", "not_deleted"])
     @pytest.mark.parametrize("is_string_indexed", ["is_string_indexed", "not_string_indexed"])
     @pytest.mark.parametrize("is_vector_indexed", ["is_vector_indexed", "not_vector_indexed"])
     @pytest.mark.parametrize("segment_status", ["only_growing", "only_sealed", "all"])
-    @pytest.mark.parametrize("index_type", ["IVF_FLAT"]) #"IVF_FLAT", "HNSW", "BIN_IVF_FLAT"
+    @pytest.mark.parametrize("index_type", ["IVF_FLAT","HNSW","BIN_IVF_FLAT"]) #"IVF_FLAT", "HNSW", "BIN_IVF_FLAT"
     def test_task_all(self, index_type, is_compacted,
                       segment_status, is_vector_indexed, is_string_indexed, replica_number, is_deleted, data_size):
         """
