@@ -50,62 +50,20 @@ class TestChaos(TestChaosBase):
             raise Exception("no connections")
         self.host = host
         self.port = port
-        self.instance_name = get_milvus_instance_name(constants.CHAOS_NAMESPACE, host)
 
     @pytest.fixture(scope="function", autouse=True)
     def init_health_checkers(self):
         c_name = cf.gen_unique_str("Checker_")
         checkers = {
-            # Op.create: CreateChecker(collection_name=c_name),
-            # Op.insert: InsertChecker(collection_name=c_name),
-            # Op.flush: FlushChecker(collection_name=c_name),
-            # Op.query: QueryChecker(collection_name=c_name),
-            # Op.search: SearchChecker(collection_name=c_name),
-            # Op.delete: DeleteChecker(collection_name=c_name),
-            # Op.compact: CompactChecker(collection_name=c_name),
-            # Op.index: IndexChecker(),
-            # Op.drop: DropChecker(),
-            # Op.bulk_load: BulkLoadChecker(),
-            Op.load_balance: LoadBalanceChecker()
+            Op.insert: InsertChecker(collection_name=c_name),
+            Op.flush: FlushChecker(collection_name=c_name),
+            Op.query: QueryChecker(collection_name=c_name),
+            Op.search: SearchChecker(collection_name=c_name),
+            Op.delete: DeleteChecker(collection_name=c_name),
+            Op.compact: CompactChecker(collection_name=c_name),
+            Op.index: IndexChecker(collection_name=c_name),
         }
         self.health_checkers = checkers
-        self.prepare_bulk_load()
-
-    def prepare_bulk_load(self, nb=30000, row_based=True):
-        if Op.bulk_load not in self.health_checkers:
-            log.info("bulk_load checker is not in  health checkers, skip prepare bulk load")
-            return
-        log.info("bulk_load checker is in  health checkers, prepare data firstly")
-        release_name = self.instance_name
-        minio_ip_pod_pair = get_pod_ip_name_pairs("chaos-testing", f"release={release_name}, app=minio")
-        ms = MilvusSys()
-        minio_ip = list(minio_ip_pod_pair.keys())[0]
-        minio_port = "9000"
-        minio_endpoint = f"{minio_ip}:{minio_port}"
-        bucket_name = ms.index_nodes[0]["infos"]["system_configurations"]["minio_bucket_name"]
-        schema = cf.gen_default_collection_schema()
-        data = cf.gen_default_list_data_for_bulk_load(nb=nb)
-        fields_name = [field.name for field in schema.fields]
-        if not row_based:
-            data_dict = dict(zip(fields_name, data))
-        if row_based:
-            entities = []
-            for i in range(nb):
-                entity_value = [field_values[i] for field_values in data]
-                entity = dict(zip(fields_name, entity_value))
-                entities.append(entity)
-            data_dict = {"rows": entities}
-        file_name = "bulk_load_data_source.json"
-        files = [file_name]
-        #TODO: npy file type is not supported so far
-        log.info("generate bulk load file")
-        with open(file_name, "w") as f:
-            f.write(json.dumps(data_dict))
-        log.info("upload file to minio")
-        client = Minio(minio_endpoint, access_key="minioadmin", secret_key="minioadmin", secure=False)
-        client.fput_object(bucket_name, file_name, file_name)
-        self.health_checkers[Op.bulk_load].update(schema=schema, files=files, row_based=row_based)
-        log.info("prepare data for bulk load done")
 
     def teardown(self):
         chaos_res = CusResource(kind=self._chaos_config['kind'],

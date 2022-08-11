@@ -2,8 +2,8 @@ cluster:
   enabled: true
 image:
   all:
-    repository: milvusdb/milvus
-    tag: master-latest
+    repository: harbor.milvus.io/dockerhub/milvusdb/milvus
+    tag: master-20220812-74a87f8
     pullPolicy: IfNotPresent
 
 etcd:

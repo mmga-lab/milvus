@@ -52,12 +52,12 @@ def gen_search_param(index_type, metric_type="L2"):
 
 
 
-def get_all_collections():
+def get_collections():
     try:
         with open("/tmp/ci_logs/all_collections.json", "r") as f:
             data = json.load(f)
-            all_collections = data["all"]
+            collections = data["all"]
     except Exception as e:
         log.error(f"get_all_collections error: {e}")
         return []
-    return all_collections
+    return collections
