@@ -150,8 +150,8 @@ jobs:
           bash ../check_healthy.sh
           docker-compose ps -a
 
-          echo "sleep 120s for the second deployment to be ready"
-          sleep 120s
+          echo "sleep 180s for the second deployment to be ready"
+          sleep 180s
       - name: Run second test
         timeout-minutes: 15
         shell: bash
@@ -185,8 +185,8 @@ jobs:
           bash ../check_healthy.sh
           docker-compose ps -a
 
-          echo "sleep 120s for the deployment to be ready after docker restart"
-          sleep 120s
+          echo "sleep 180s for the deployment to be ready after docker restart"
+          sleep 180s
 
 
       - name: Run third test
