@@ -185,8 +185,8 @@ jobs:
           bash ../check_healthy.sh
           docker-compose ps -a
 
-          echo "sleep 180s for the deployment to be ready after docker restart"
-          sleep 180s
+          echo "sleep 240s for the deployment to be ready after docker restart"
+          sleep 240s
 
 
       - name: Run third test
