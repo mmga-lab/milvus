@@ -174,7 +174,7 @@ jobs:
           bash ../../../scripts/export_log_docker.sh ./logs/second_deploy || echo "export logs failed"
 
       - name: Restart docker
-        timeout-minutes: 5
+        timeout-minutes: 10
         shell: bash
         working-directory: tests/python_client/deploy/${{ matrix.mode }}
         run: |
