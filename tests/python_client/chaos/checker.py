@@ -368,17 +368,17 @@ class BulkLoadChecker(Checker):
         self.schema = cf.gen_default_collection_schema()
         self.flush = flush
         self.files = ["bulk_load_data_source.json"]
-        self.row_based = True
+        self.is_row_based = True
         self.recheck_failed_task = False
         self.failed_tasks = []
 
-    def update(self, files=None, schema=None, row_based=None):
+    def update(self, files=None, schema=None, is_row_based=None):
         if files is not None:
             self.files = files
         if schema is not None:
             self.schema = schema
-        if row_based is not None:
-            self.row_based = row_based
+        if is_row_based is not None:
+            self.is_row_based = is_row_based
 
     def keep_running(self):
         while True:
@@ -395,8 +395,9 @@ class BulkLoadChecker(Checker):
                 log.info(f"flush before bulk load, cost time: {tt:.4f}")
             # import data
             t0 = time.time()
+            log.info(f"{c_name=}, {self.is_row_based=}, {self.files=}")
             task_ids, res_1 = self.utility_wrap.bulk_load(collection_name=c_name,
-                                                          row_based=self.row_based,
+                                                          is_row_based=self.is_row_based,
                                                           files=self.files)
             log.info(f"bulk load task ids:{task_ids}")
             completed, res_2 = self.utility_wrap.wait_for_bulk_load_tasks_completed(task_ids=task_ids, timeout=30)

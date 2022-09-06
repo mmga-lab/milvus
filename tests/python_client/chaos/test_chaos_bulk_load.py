@@ -92,7 +92,7 @@ class TestChaos(TestChaosBase):
 		self.health_checkers = checkers
 
 	@pytest.fixture(scope="function", autouse=True)
-	def prepare_bulk_load(self, nb=1000, row_based=True):
+	def prepare_bulk_load(self, nb=1000, is_row_based=True):
 		if Op.bulk_load not in self.health_checkers:
 			log.info("bulk_load checker is not in  health checkers, skip prepare bulk load")
 			return
@@ -107,25 +107,25 @@ class TestChaos(TestChaosBase):
 		schema = cf.gen_default_collection_schema()
 		data = cf.gen_default_list_data_for_bulk_load(nb=nb)
 		fields_name = [field.name for field in schema.fields]
-		if not row_based:
+		if not is_row_based:
 			data_dict = dict(zip(fields_name, data))
-		if row_based:
+		if is_row_based:
 			entities = []
 			for i in range(nb):
 				entity_value = [field_values[i] for field_values in data]
 				entity = dict(zip(fields_name, entity_value))
 				entities.append(entity)
 			data_dict = {"rows": entities}
-		file_name = "bulk_load_data_source.json"
+		file_name = "/tmp/ci_logs/bulk_load_data_source.json"
 		files = [file_name]
 		#TODO: npy file type is not supported so far
 		log.info("generate bulk load file")
 		with open(file_name, "w") as f:
-			f.write(json.dumps(data_dict))
+			f.write(json.dumps(data_dict, indent=4))
 		log.info("upload file to minio")
 		client = Minio(minio_endpoint, access_key="minioadmin", secret_key="minioadmin", secure=False)
 		client.fput_object(bucket_name, file_name, file_name)
-		self.health_checkers[Op.bulk_load].update(schema=schema, files=files, row_based=row_based)
+		self.health_checkers[Op.bulk_load].update(schema=schema, files=files, is_row_based=is_row_based)
 		log.info("prepare data for bulk load done")
 
 	def teardown(self):
