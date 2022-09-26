@@ -152,7 +152,7 @@ class SearchChecker(Checker):
         res, result = self.c_wrap.search(
             data=cf.gen_vectors(5, ct.default_dim),
             anns_field=ct.default_float_vec_field_name,
-            param={"nprobe": 32},
+            param={"metric_type": "L2", "params": {"nprobe": 16}},
             limit=1,
             timeout=timeout,
             check_task=CheckTasks.check_nothing
