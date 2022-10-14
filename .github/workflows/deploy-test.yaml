@@ -11,12 +11,12 @@ on:
       old_image_tag:
         description: The old image tag to use for the deploy test
         required: true
-        default: 'v2.1.0'
+        default: 'v2.1.4'
 
       previous_release_version:
         description: The previous release version to use for the deploy test
         required: true
-        default: 'v2.1.0'
+        default: 'v2.1.4'
 
       new_image_repo:
         description: The image repository name to use for the deploy test
@@ -56,7 +56,7 @@ jobs:
         env:
           DEFAULT_OLD_IMAGE_REPO: "milvusdb/milvus"
           DEFAULT_OLD_IMAGE_TAG: "latest"
-          DEFAULT_PREVIOUS_RELEASE_VERSION: "v2.1.0"
+          DEFAULT_PREVIOUS_RELEASE_VERSION: "v2.1.4"
           DEFAULT_NEW_IMAGE_REPO: "milvusdb/milvus"
           DEFAULT_NEW_IMAGE_TAG: "master-latest"
         run: |
@@ -111,7 +111,7 @@ jobs:
         shell: bash
         working-directory: tests/python_client/deploy
         run: |
-          python scripts/first_recall_test.py
+          # python scripts/first_recall_test.py
           if [ ${{ matrix.task }} == "reinstall" ]; then
             python3 scripts/action_before_reinstall.py
           fi
@@ -157,7 +157,7 @@ jobs:
         shell: bash
         working-directory: tests/python_client/deploy
         run: |
-          python scripts/second_recall_test.py
+          # python scripts/second_recall_test.py
           if [ ${{ matrix.task }} == "reinstall" ]; then
             python3 scripts/action_after_reinstall.py
           fi
