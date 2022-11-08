@@ -2436,7 +2436,6 @@ class TestBulkInsertInvalidParams(TestcaseBaseBulkInsert):
         assert self.collection_wrap.num_entities == 0
 
 
-@pytest.mark.skip()
 class TestBulkInsertAdvanced(TestcaseBaseBulkInsert):
 
     @pytest.mark.tags(CaseLabel.L3)
