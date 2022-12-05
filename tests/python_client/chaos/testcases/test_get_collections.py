@@ -18,6 +18,7 @@ class TestGetCollections(TestcaseBase):
     def test_get_collections_by_prefix(self,):
         self._connect()
         all_collections = self.utility_wrap.list_collections()[0]
+        log.info(f"all collections {all_collections}")
         all_collections = [c_name for c_name in all_collections if "Checker" in c_name]
         selected_collections_map = {}
         for c_name in all_collections:
