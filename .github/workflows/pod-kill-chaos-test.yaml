@@ -22,8 +22,8 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        pod: [allstandalone, allcluster, standalone, datacoord, datanode, indexcoord, indexnode, proxy, pulsar, querycoord, querynode, rootcoord, etcd, minio]
-    
+        # pod: [allstandalone, allcluster, standalone, datacoord, datanode, indexcoord, indexnode, proxy, pulsar, querycoord, querynode, rootcoord, etcd, minio]
+        pod: [allstandalone, allcluster, standalone]
     steps:
 
       - name: Set env param
