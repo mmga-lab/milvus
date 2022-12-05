@@ -120,7 +120,7 @@ jobs:
           ps aux|grep forward|grep -v grep|awk '{print $2}'|xargs kill -9
           kubectl port-forward service/${{ env.RELEASE }}-milvus 19530 -n chaos-testing >/dev/null 2>&1 &
 
-          sleep 20s
+          sleep 60s
           nc -vz 127.0.0.1 19530
 
       - name: Run e2e test after chaos
@@ -134,14 +134,14 @@ jobs:
       - name: Run hello_milvus after chaos
         timeout-minutes: 5
         shell: bash
-        working-directory: tests/python_client
+        working-directory: tests/python_client/chaos
         run: |
           pytest -s -v testcases/test_data_persistence.py --host 127.0.0.1 --log-cli-level=INFO --capture=no
 
       - name: Verify all collections after chaos
         timeout-minutes: 15
         shell: bash
-        working-directory: tests/python_client
+        working-directory: tests/python_client/chaos
         run: |
           pytest -s -v testcases/test_get_collections.py --host 127.0.0.1 --log-cli-level=INFO --capture=no
           sleep 2s
