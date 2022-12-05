@@ -106,13 +106,6 @@ jobs:
           sleep 60s
           pytest test_chaos_apply.py --milvus_ns chaos-testing --chaos_type pod-kill --target_component ${{ matrix.pod }} --host 127.0.0.1 --log-cli-level=INFO --capture=no >/dev/null 2>&1 &
 
-      - name: Result Analysis
-        timeout-minutes: 1
-        shell: bash
-        working-directory: tests/python_client/chaos/reports
-        run: |
-          echo "result analysis"
-          cat ${{ env.RELEASE }}.log || echo "no log file"
 
       - name: Wait all pods ready
         timeout-minutes: 5
