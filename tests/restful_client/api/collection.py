@@ -1,3 +1,5 @@
+import json
+
 from decorest import GET, POST, DELETE
 from decorest import HttpStatus, RestClient
 from decorest import accept, body, content, endpoint, form
@@ -5,32 +7,54 @@ from decorest import header, multipart, on, query, stream, timeout
 
 
 class Collection(RestClient):
+    @DELETE("collection")
+    @body("payload", lambda p: json.dumps(p))
+    @on(200, lambda r: r.json())
+    def drop_collection(self, paylaod):
+        """Drop a collection"""
 
-    def drop_collection():
-        pass
+    @GET("collection")
+    @body("payload", lambda p: json.dumps(p))
+    @on(200, lambda r: r.json())
+    def describe_collection(self, payload):
+        """Describe a collection"""
 
-    def describe_collection():
-        pass
+    @POST("collection")
+    @body("payload", lambda p: json.dumps(p))
+    @on(200, lambda r: r.json())
+    def create_collection(self):
+        """Create a collection"""
 
-    def create_collection():
-        pass
+    @GET("collection/existence")
+    @body("payload", lambda p: json.dumps(p))
+    @on(200, lambda r: r.json())
+    def has_collection(self, payload):
+        """Check if a collection exists"""
 
-    def has_collection():
-        pass
-
-    def release_collection():
-        pass
+    @DELETE("collection/load")
+    @body("payload", lambda p: json.dumps(p))
+    @on(200, lambda r: r.json())    
+    def release_collection(self, payload):
+        """Release a collection"""
     
-    def load_collection():
-        pass
-
-    def get_collection_statistics():
-        pass
-
-    def show_collections():
-        pass
+    @POST("collection/load")
+    @body("payload", lambda p: json.dumps(p))
+    @on(200, lambda r: r.json())    
+    def load_collection(self, payload):
+        """Load a collection"""
 
     
+    @GET("collection/statistics")
+    @body("payload", lambda p: json.dumps(p))
+    @on(200, lambda r: r.json())    
+    def get_collection_statistics(self, payload):
+        """Get collection statistics"""
+
+    @GET("collections")
+    @body("payload", lambda p: json.dumps(p))
+    @on(200, lambda r: r.json())     
+    def show_collections(self):
+        """Show collections"""
 
 
 
