@@ -22,7 +22,7 @@ class Collection(RestClient):
     @POST("collection")
     @body("payload", lambda p: json.dumps(p))
     @on(200, lambda r: r.json())
-    def create_collection(self):
+    def create_collection(self, payload):
         """Create a collection"""
 
     @GET("collection/existence")
