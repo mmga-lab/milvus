@@ -13,4 +13,5 @@ class TestDefault:
             "metric_type": "L2"
         }
         collection.create_collection(payload)
+
         collection.drop_collection(payload)

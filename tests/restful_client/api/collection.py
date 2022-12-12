@@ -43,7 +43,6 @@ class Collection(RestClient):
     def load_collection(self, payload):
         """Load a collection"""
 
-    
     @GET("collection/statistics")
     @body("payload", lambda p: json.dumps(p))
     @on(200, lambda r: r.json())    

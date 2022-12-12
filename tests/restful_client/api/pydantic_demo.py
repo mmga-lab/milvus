@@ -20,6 +20,5 @@ class Person(BaseModel):
 class PersonFactory(ModelFactory):
     __model__ = Person
 
-
 result = PersonFactory.build()
 print(result)
