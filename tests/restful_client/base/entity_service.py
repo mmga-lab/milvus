@@ -11,7 +11,7 @@ class EntityService:
             timeout = TIMEOUT
         if endpoint is None:
             endpoint = "http://localhost:9091/api/v1"
-        self._entity = Entity(endpoint=endpoint, timeout=timeout)
+        self._entity = Entity(endpoint=endpoint)
 
     def calc_distance(self, base, op_left, op_right, params):
         payload = milvus.CalcDistanceRequest(base=base, op_left=op_left, op_right=op_right, params=params)

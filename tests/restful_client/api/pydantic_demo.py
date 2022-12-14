@@ -17,8 +17,25 @@ class Person(BaseModel):
     birthday: Union[datetime, date]
 
 
-class PersonFactory(ModelFactory):
-    __model__ = Person
+class Pet(BaseModel):
+    name: str
+    age: int
 
-result = PersonFactory.build()
+
+class PetFactory(BaseModel):
+    name: str
+    pet: Pet
+
+
+sample = {
+ "name": "John",
+ "pet": {
+    "name": "Fido",
+    "age": 3
+ }
+}
+
+result = PetFactory(**sample)
+
 print(result)
+

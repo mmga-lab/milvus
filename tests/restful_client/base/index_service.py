@@ -11,7 +11,7 @@ class IndexService:
             timeout = TIMEOUT
         if endpoint is None:
             endpoint = "http://localhost:9091/api/v1"
-        self._index = Index(endpoint=endpoint, timeout=timeout)
+        self._index = Index(endpoint=endpoint)
 
     def drop_index(self, base, collection_name, db_name, field_name, index_name):
         payload = server.DropIndexRequest(base=base, collection_name=collection_name,

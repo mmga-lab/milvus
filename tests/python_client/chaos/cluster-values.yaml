@@ -13,6 +13,7 @@ etcd:
     tag: 3.5.0-r7
 
 minio:
+  bucketName: "a-bucket"
   resources:
     requests:
       memory: 256Mi

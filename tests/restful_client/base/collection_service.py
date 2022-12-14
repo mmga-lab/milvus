@@ -1,5 +1,5 @@
 from api.collection import Collection
-from models import common, schema, milvus, server
+from models import milvus
 
 
 TIMEOUT = 30
@@ -12,9 +12,9 @@ class CollectionService:
             timeout = TIMEOUT
         if endpoint is None:
             endpoint = "http://localhost:9091/api/v1"
-        self._collection = Collection(endpoint=endpoint, timeout=timeout)
+        self._collection = Collection(endpoint=endpoint)
 
-    def create_collection(self, collection_name, consistency_level=1, schema=None, shards_num=1):
+    def create_collection(self, collection_name, consistency_level=1, schema=None, shards_num=2):
 
         payload = milvus.CreateCollectionRequest(collection_name=collection_name,
                                                  consistency_level=consistency_level,

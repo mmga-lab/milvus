@@ -57,3 +57,6 @@ class Collection(RestClient):
 
 
 
+if __name__ == '__main__':
+    client = Collection("http://localhost:19121/api/v1")
+    print(client)
