@@ -1,6 +1,7 @@
 from base.client_base import TestBase
 from utils.util_log import test_log as log
 
+
 class TestDefault(TestBase):
 
     def test_e2e(self):

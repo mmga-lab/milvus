@@ -52,7 +52,7 @@ class Collection(RestClient):
     @GET("collections")
     @body("payload", lambda p: json.dumps(p))
     @on(200, lambda r: r.json())     
-    def show_collections(self):
+    def show_collections(self, payload):
         """Show collections"""
 
 

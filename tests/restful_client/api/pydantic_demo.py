@@ -1,5 +1,5 @@
 from datetime import date, datetime
-from typing import List, Union
+from typing import List, Union, Optional
 
 from pydantic import BaseModel, UUID4, conlist
 
@@ -25,6 +25,7 @@ class Pet(BaseModel):
 class PetFactory(BaseModel):
     name: str
     pet: Pet
+    age: Optional[int] = None
 
 
 sample = {
@@ -33,6 +34,7 @@ sample = {
     "name": "Fido",
     "age": 3
  }
+
 }
 
 result = PetFactory(**sample)

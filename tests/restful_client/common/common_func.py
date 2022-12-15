@@ -40,7 +40,7 @@ def gen_unique_str(str_value=None):
 
 
 def gen_field(name=ct.default_bool_field_name, description=ct.default_desc, type_params=None, index_params=None,
-              data_type="Int64", is_param=False, auto_id=False):
+              data_type="Int64", is_primary_key=False, auto_id=False, dim=128, max_length=256):
     data_type_map = {
         "Bool": 1,
         "Int8": 2,
@@ -54,17 +54,24 @@ def gen_field(name=ct.default_bool_field_name, description=ct.default_desc, type
         "BinaryVector": 100,
         "FloatVector": 101,
     }
+    if data_type == "Int64":
+        is_primary_key = True
+        auto_id = True
     if type_params is None:
         type_params = []
     if index_params is None:
         index_params = []
+    if data_type in ["FloatVector", "BinaryVector"]:
+        type_params = [{"key": "dim", "value": str(dim)}]
+    if data_type in ["String", "VarChar"]:
+        type_params = [{"key": "max_length", "value": str(dim)}]
     return {
         "name": name,
         "description": description,
         "data_type": data_type_map.get(data_type, 0),
         "type_params": type_params,
         "index_params": index_params,
-        "is_primary": is_param,
+        "is_primary_key": is_primary_key,
         "auto_id": auto_id,
     }
 
@@ -78,24 +85,26 @@ def gen_schema(name, fields, description=ct.default_desc, auto_id=False):
     }
 
 
-def gen_default_schema(data_types=None, dim=ct.default_dim):
+def gen_default_schema(data_types=None, dim=ct.default_dim, collection_name=None):
     if data_types is None:
         data_types = ["Int64", "Float", "VarChar", "FloatVector"]
     fields = []
     for data_type in data_types:
         if data_type in ["FloatVector", "BinaryVector"]:
-            fields.append(gen_field(name=data_type, data_type=data_type, type_params=[{"dim": dim}]))
+            fields.append(gen_field(name=data_type, data_type=data_type, type_params=[{"key": "dim", "value": dim}]))
         else:
             fields.append(gen_field(name=data_type, data_type=data_type))
     return {
-        "autoID": False,
+        "autoID": True,
         "fields": fields,
         "description": ct.default_desc,
-        "name": gen_unique_str("schema"),
+        "name": collection_name,
     }
 
 
-def gen_fields_data(schema, nb=ct.default_nb,):
+def gen_fields_data(schema=None, nb=ct.default_nb,):
+    if schema is None:
+        schema = gen_default_schema()
     fields = schema["fields"]
     fields_data = []
     for field in fields:
@@ -110,7 +119,7 @@ def gen_fields_data(schema, nb=ct.default_nb,):
         elif field["data_type"] == 5:
             fields_data.append([random.randint(-9223372036854775808, 9223372036854775807) for i in range(nb)])
         elif field["data_type"] == 10:
-            fields_data.append([np.float32(i) for i in range(nb)])
+            fields_data.append([np.float64(i) for i in range(nb)])  # json not support float32
         elif field["data_type"] == 11:
             fields_data.append([np.float64(i) for i in range(nb)])
         elif field["data_type"] == 20:
@@ -118,9 +127,19 @@ def gen_fields_data(schema, nb=ct.default_nb,):
         elif field["data_type"] == 21:
             fields_data.append([gen_unique_str(str(i)) for i in range(nb)])
         elif field["data_type"] == 100:
-            fields_data.append(gen_binary_vectors(nb, field["type_params"][0]["dim"]))
+            dim = ct.default_dim
+            for k, v in field["type_params"]:
+                if k == "dim":
+                    dim = int(v)
+                    break
+            fields_data.append(gen_binary_vectors(nb, dim))
         elif field["data_type"] == 101:
-            fields_data.append(gen_float_vectors(nb, field["type_params"][0]["dim"]))
+            dim = ct.default_dim
+            for k, v in field["type_params"]:
+                if k == "dim":
+                    dim = int(v)
+                    break
+            fields_data.append(gen_float_vectors(nb, dim))
         else:
             log.error("Unknown data type.")
     fields_data_body = []
@@ -134,7 +153,7 @@ def gen_fields_data(schema, nb=ct.default_nb,):
 
 
 def gen_float_vectors(nb, dim):
-    return [[np.float32(random.uniform(-1.0, 1.0)) for _ in range(dim)] for _ in range(nb)]
+    return [[np.float64(random.uniform(-1.0, 1.0)) for _ in range(dim)] for _ in range(nb)]  # json not support float32
 
 
 def gen_binary_vectors(nb, dim):
@@ -146,6 +165,22 @@ def gen_binary_vectors(nb, dim):
         # packs a binary-valued array into bits in a unit8 array, and bytes array_of_ints
         binary_vectors.append(bytes(np.packbits(raw_vector, axis=-1).tolist()))
     return binary_vectors
+
+
+def gen_default_index_params(index_type=None):
+    if index_type is None:
+        index_type = ct.default_index
+    extra_params = []
+    for k, v in index_type.items():
+        item = {"key": k, "value": v}
+        extra_params.append(item)
+
+
+    if index_type is None:
+        index_type = ct.default_index
+    if index_type == "IVF_FLAT":
+        return {"index_type": index_type, "metric_type": "L2", "params": {"nlist": 64}}
+
 
 
 def modify_file(file_path_list, is_modify=False, input_content=""):

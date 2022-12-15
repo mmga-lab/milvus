@@ -15,6 +15,7 @@ default_search_params = {"metric_type": "L2", "params": {"nprobe": 10}}
 default_search_ip_params = {"metric_type": "IP", "params": {"nprobe": 10}}
 default_search_binary_params = {"metric_type": "JACCARD", "params": {"nprobe": 10}}
 default_index = {"index_type": "IVF_SQ8", "metric_type": "L2", "params": {"nlist": 64}}
+default_varchar_index = {"index_type": "IVF_FLAT", "metric_type": "L2", "params": {}}
 default_binary_index = {"index_type": "BIN_IVF_FLAT", "params": {"nlist": 128}, "metric_type": "JACCARD"}
 default_diskann_index = {"index_type": "DISKANN", "metric_type": "L2", "params": {}}
 default_diskann_search_params = {"metric_type": "L2", "params": {"search_list": 30}}
@@ -58,3 +59,11 @@ compact_delta_ratio_reciprocal = 5  # compact_delta_binlog_ratio is 0.2
 compact_retention_duration = 40  # compaction travel time retention range 20s
 max_compaction_interval = 60  # the max time interval (s) from the last compaction
 max_field_num = 256  # Maximum number of fields in a collection
+
+metric_types = []
+all_index_types = ["FLAT", "IVF_FLAT", "IVF_SQ8", "IVF_PQ", "HNSW", "ANNOY", "DISKANN", "BIN_FLAT", "BIN_IVF_FLAT"]
+default_index_params = [{"nlist": 128}, {"nlist": 128}, {"nlist": 128}, {"nlist": 128, "m": 16, "nbits": 8},
+                        {"M": 48, "efConstruction": 500}, {"n_trees": 50}, {}, {"nlist": 128}, {"nlist": 128}]
+index_params_map = {'FLAT': {'nlist': 128}, 'IVF_FLAT': {'nlist': 128}, 'IVF_SQ8': {'nlist': 128},
+                    'IVF_PQ': {'nlist': 128, 'm': 16, 'nbits': 8}, 'HNSW': {'M': 48, 'efConstruction': 500},
+                    'ANNOY': {'n_trees': 50}, 'DISKANN': {}, 'BIN_FLAT': {'nlist': 128}, 'BIN_IVF_FLAT': {'nlist': 128}}

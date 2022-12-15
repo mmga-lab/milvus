@@ -43,10 +43,17 @@ class TestBase(Base):
     def init_collection(self, name=None, schema=None, nb=ct.default_nb, **kwargs):
         collection_name = cf.gen_unique_str("test") if name is None else name
         if schema is None:
-            schema = cf.gen_default_schema()
-            schema = CollectionSchema(**schema)
-        self.collection_service.create_collection(collection_name, schema=schema, **kwargs)
-        self.entity_service.insert(collection_name, nb=nb)
+            schema = cf.gen_default_schema(collection_name=collection_name)
+        res = self.collection_service.create_collection(collection_name=collection_name, schema=schema)
+        log.info(res)
+        res = self.entity_service.insert(collection_name=collection_name, fields_data=cf.gen_fields_data(schema, nb=nb),
+                                         num_rows=nb)
+        log.info(res)
+        res = self.entity_service.flush(collection_names=[collection_name])
+        log.info(res)
+        # create index
+        index_params = cf.gen_default_index_params()
+        res = self.index_service.create_index(collection_name=collection_name)
         return collection_name
 
 
