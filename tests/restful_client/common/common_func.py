@@ -152,6 +152,20 @@ def gen_fields_data(schema=None, nb=ct.default_nb,):
     return fields_data_body
 
 
+def find_vector_field(schema):
+    for field in schema["fields"]:
+        if field["data_type"] in [100, 101]:
+            return field["name"]
+    return None
+
+
+def find_varchar_field(schema):
+    for field in schema["fields"]:
+        if field["data_type"] == 21:
+            return field["name"]
+    return None
+
+
 def gen_float_vectors(nb, dim):
     return [[np.float64(random.uniform(-1.0, 1.0)) for _ in range(dim)] for _ in range(nb)]  # json not support float32
 
@@ -167,20 +181,32 @@ def gen_binary_vectors(nb, dim):
     return binary_vectors
 
 
-def gen_default_index_params(index_type=None):
+def gen_index_params(index_type=None):
     if index_type is None:
-        index_type = ct.default_index
+        index_params = ct.default_index_params
+    else:
+        index_params = ct.all_index_params_map[index_type]
     extra_params = []
-    for k, v in index_type.items():
+    for k, v in index_params.items():
         item = {"key": k, "value": v}
         extra_params.append(item)
 
 
-    if index_type is None:
-        index_type = ct.default_index
-    if index_type == "IVF_FLAT":
-        return {"index_type": index_type, "metric_type": "L2", "params": {"nlist": 64}}
+def gen_search_params(search_params=None, anns_fields=ct.default_float_vec_field_name, topk=ct.default_top_k):
+    if search_params is None:
+        search_params = ct.default_search_params
+    extra_params = []
+    for k, v in search_params.items():
+        item = {"key": k, "value": v}
+        extra_params.append(item)
+    extra_params.append({"key": "anns_fields", "value": anns_fields})
+    extra_params.append({"key": "topk", "value": topk})
 
+
+def gen_search_vectors(dim, nb, is_binary=False):
+    if is_binary:
+        return gen_binary_vectors(nb, dim)
+    return gen_float_vectors(nb, dim)
 
 
 def modify_file(file_path_list, is_modify=False, input_content=""):

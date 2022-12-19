@@ -7,10 +7,11 @@ from decorest import header, multipart, on, query, stream, timeout
 
 
 class Collection(RestClient):
+    
     @DELETE("collection")
     @body("payload", lambda p: json.dumps(p))
     @on(200, lambda r: r.json())
-    def drop_collection(self, paylaod):
+    def drop_collection(self, payload):
         """Drop a collection"""
 
     @GET("collection")
@@ -54,7 +55,6 @@ class Collection(RestClient):
     @on(200, lambda r: r.json())     
     def show_collections(self, payload):
         """Show collections"""
-
 
 
 if __name__ == '__main__':

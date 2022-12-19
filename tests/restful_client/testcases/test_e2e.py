@@ -7,6 +7,7 @@ class TestDefault(TestBase):
     def test_e2e(self):
         collection_name = self.init_collection()
         log.info(f"collection name: {collection_name}")
+
         assert 1 == 1
 
 

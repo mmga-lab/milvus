@@ -14,7 +14,7 @@ default_limit = 10
 default_search_params = {"metric_type": "L2", "params": {"nprobe": 10}}
 default_search_ip_params = {"metric_type": "IP", "params": {"nprobe": 10}}
 default_search_binary_params = {"metric_type": "JACCARD", "params": {"nprobe": 10}}
-default_index = {"index_type": "IVF_SQ8", "metric_type": "L2", "params": {"nlist": 64}}
+default_index_params = {"index_type": "IVF_SQ8", "metric_type": "L2", "params": {"nlist": 64}}
 default_varchar_index = {"index_type": "IVF_FLAT", "metric_type": "L2", "params": {}}
 default_binary_index = {"index_type": "BIN_IVF_FLAT", "params": {"nlist": 128}, "metric_type": "JACCARD"}
 default_diskann_index = {"index_type": "DISKANN", "metric_type": "L2", "params": {}}
@@ -26,17 +26,17 @@ default_server_segment_row_limit = 1024 * 512
 default_alias = "default"
 default_user = "root"
 default_password = "Milvus"
-default_bool_field_name = "bool"
-default_int8_field_name = "int8"
-default_int16_field_name = "int16"
-default_int32_field_name = "int32"
-default_int64_field_name = "int64"
-default_float_field_name = "float"
-default_double_field_name = "double"
-default_string_field_name = "varchar"
-default_float_vec_field_name = "float_vector"
-another_float_vec_field_name = "float_vector1"
-default_binary_vec_field_name = "binary_vector"
+default_bool_field_name = "Bool"
+default_int8_field_name = "Int8"
+default_int16_field_name = "Int16"
+default_int32_field_name = "Int32"
+default_int64_field_name = "Int64"
+default_float_field_name = "Float"
+default_double_field_name = "Double"
+default_string_field_name = "Varchar"
+default_float_vec_field_name = "FloatVector"
+another_float_vec_field_name = "FloatVector1"
+default_binary_vec_field_name = "BinaryVector"
 default_partition_name = "_default"
 default_tag = "1970_01_01"
 row_count = "row_count"
@@ -60,10 +60,20 @@ compact_retention_duration = 40  # compaction travel time retention range 20s
 max_compaction_interval = 60  # the max time interval (s) from the last compaction
 max_field_num = 256  # Maximum number of fields in a collection
 
+default_dsl = f"{default_int64_field_name} >= 100"
+
+
 metric_types = []
 all_index_types = ["FLAT", "IVF_FLAT", "IVF_SQ8", "IVF_PQ", "HNSW", "ANNOY", "DISKANN", "BIN_FLAT", "BIN_IVF_FLAT"]
-default_index_params = [{"nlist": 128}, {"nlist": 128}, {"nlist": 128}, {"nlist": 128, "m": 16, "nbits": 8},
-                        {"M": 48, "efConstruction": 500}, {"n_trees": 50}, {}, {"nlist": 128}, {"nlist": 128}]
-index_params_map = {'FLAT': {'nlist': 128}, 'IVF_FLAT': {'nlist': 128}, 'IVF_SQ8': {'nlist': 128},
-                    'IVF_PQ': {'nlist': 128, 'm': 16, 'nbits': 8}, 'HNSW': {'M': 48, 'efConstruction': 500},
-                    'ANNOY': {'n_trees': 50}, 'DISKANN': {}, 'BIN_FLAT': {'nlist': 128}, 'BIN_IVF_FLAT': {'nlist': 128}}
+all_index_params_map = {"FLAT": {"index_type": "FLAT", "params": {"nlist": 128}, "metric_type": "L2"},
+                        "IVF_FLAT": {"index_type": "IVF_FLAT", "params": {"nlist": 128}, "metric_type": "L2"},
+                        "IVF_SQ8": {"index_type": "IVF_SQ8", "params": {"nlist": 128}, "metric_type": "L2"},
+                        "IVF_PQ": {"index_type": "IVF_PQ", "params": {"nlist": 128, "m": 16, "nbits": 8},
+                                   "metric_type": "L2"},
+                        "HNSW": {"index_type": "HNSW", "params": {"M": 48, "efConstruction": 500}, "metric_type": "L2"},
+                        "ANNOY": {"index_type": "ANNOY", "params": {"n_trees": 50}, "metric_type": "L2"},
+                        "DISKANN": {"index_type": "DISKANN", "params": {}, "metric_type": "L2"},
+                        "BIN_FLAT": {"index_type": "BIN_FLAT", "params": {"nlist": 128}, "metric_type": "JACCARD"},
+                        "BIN_IVF_FLAT": {"index_type": "BIN_IVF_FLAT", "params": {"nlist": 128},
+                                         "metric_type": "JACCARD"}
+                        }

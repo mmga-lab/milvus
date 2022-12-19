@@ -31,7 +31,7 @@ class CollectionService:
         rsp = self._collection.create_collection(payload)
         return rsp
 
-    def has_collection(self, collection_name, time_stamp=0):
+    def has_collection(self, collection_name=None, time_stamp=0):
         payload = {
             "collection_name": collection_name,
             "time_stamp": time_stamp
@@ -85,7 +85,8 @@ class CollectionService:
         # payload = payload.dict()
         return self._collection.get_collection_statistics(payload)
 
-    def show_collections(self, collection_names=None, type=None):
+    def show_collections(self, collection_names=None, type=0):
+
         payload = {
             "collection_names": collection_names,
             "type": type
