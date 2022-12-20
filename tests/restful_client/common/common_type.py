@@ -14,8 +14,9 @@ default_limit = 10
 default_search_params = {"metric_type": "L2", "params": {"nprobe": 10}}
 default_search_ip_params = {"metric_type": "IP", "params": {"nprobe": 10}}
 default_search_binary_params = {"metric_type": "JACCARD", "params": {"nprobe": 10}}
-default_index_params = {"index_type": "IVF_SQ8", "metric_type": "L2", "params": {"nlist": 64}}
-default_varchar_index = {"index_type": "IVF_FLAT", "metric_type": "L2", "params": {}}
+default_index_type = "HNSW"
+default_index_params = {"index_type": "HNSW", "params": {"M": 48, "efConstruction": 500}, "metric_type": "L2"}
+default_varchar_index = {}
 default_binary_index = {"index_type": "BIN_IVF_FLAT", "params": {"nlist": 128}, "metric_type": "JACCARD"}
 default_diskann_index = {"index_type": "DISKANN", "metric_type": "L2", "params": {}}
 default_diskann_search_params = {"metric_type": "L2", "params": {"search_list": 30}}
@@ -60,8 +61,8 @@ compact_retention_duration = 40  # compaction travel time retention range 20s
 max_compaction_interval = 60  # the max time interval (s) from the last compaction
 max_field_num = 256  # Maximum number of fields in a collection
 
-default_dsl = f"{default_int64_field_name} >= 100"
-
+default_dsl = f"{default_int64_field_name} in [2,4,6,8]"
+default_expr = f"{default_int64_field_name} in [2,4,6,8]"
 
 metric_types = []
 all_index_types = ["FLAT", "IVF_FLAT", "IVF_SQ8", "IVF_PQ", "HNSW", "ANNOY", "DISKANN", "BIN_FLAT", "BIN_IVF_FLAT"]

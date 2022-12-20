@@ -1,5 +1,6 @@
 from api.entity import Entity
 from common import common_type as ct
+from utils.util_log import test_log as log
 from models import common, schema, milvus, server
 
 TIMEOUT = 30
@@ -127,11 +128,14 @@ class EntityService:
         # payload = payload.dict()
         return self._entity.get_query_segment_info(payload)
 
-    def search(self, base=None, collection_name=None, vectors=None, db_name=None, dsl=ct.default_dsl, dsl_type=1, guarantee_timestamp=None,
-               partition_names=None, placeholder_group=None, search_params=None, travel_timestamp=None):
+    def search(self, base=None, collection_name=None, vectors=None, db_name=None, dsl=None,
+               output_fields=None, dsl_type=1,
+               guarantee_timestamp=None, partition_names=None, placeholder_group=None,
+               search_params=None, travel_timestamp=None):
         payload = {
             "base": base,
             "collection_name": collection_name,
+            "output_fields": output_fields,
             "vectors": vectors,
             "db_name": db_name,
             "dsl": dsl,
@@ -142,6 +146,7 @@ class EntityService:
             "search_params": search_params,
             "travel_timestamp": travel_timestamp
         }
+        log.info(payload)
         # payload = server.SearchRequest(base=base, collection_name=collection_name, db_name=db_name, dsl=dsl,
         #                                dsl_type=dsl_type, guarantee_timestamp=guarantee_timestamp,
         #                                partition_names=partition_names, placeholder_group=placeholder_group,

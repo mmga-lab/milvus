@@ -1,3 +1,4 @@
+import json
 import os
 import random
 import string
@@ -111,13 +112,13 @@ def gen_fields_data(schema=None, nb=ct.default_nb,):
         if field["data_type"] == 1:
             fields_data.append([random.choice([True, False]) for i in range(nb)])
         elif field["data_type"] == 2:
-            fields_data.append([random.randint(-128, 127) for i in range(nb)])
+            fields_data.append([i for i in range(nb)])
         elif field["data_type"] == 3:
-            fields_data.append([random.randint(-32768, 32767) for i in range(nb)])
+            fields_data.append([i for i in range(nb)])
         elif field["data_type"] == 4:
-            fields_data.append([random.randint(-2147483648, 2147483647) for i in range(nb)])
+            fields_data.append([i for i in range(nb)])
         elif field["data_type"] == 5:
-            fields_data.append([random.randint(-9223372036854775808, 9223372036854775807) for i in range(nb)])
+            fields_data.append([i for i in range(nb)])
         elif field["data_type"] == 10:
             fields_data.append([np.float64(i) for i in range(nb)])  # json not support float32
         elif field["data_type"] == 11:
@@ -152,18 +153,37 @@ def gen_fields_data(schema=None, nb=ct.default_nb,):
     return fields_data_body
 
 
-def find_vector_field(schema):
+def get_vector_field(schema):
     for field in schema["fields"]:
         if field["data_type"] in [100, 101]:
             return field["name"]
     return None
 
 
-def find_varchar_field(schema):
+def get_varchar_field(schema):
     for field in schema["fields"]:
         if field["data_type"] == 21:
             return field["name"]
     return None
+
+
+def gen_vectors(nq=None, schema=None):
+    if nq is None:
+        nq = ct.default_nq
+    dim = ct.default_dim
+    data_type = 101
+    for field in schema["fields"]:
+        if field["data_type"] in [100, 101]:
+            dim = ct.default_dim
+            data_type = field["data_type"]
+            for k, v in field["type_params"]:
+                if k == "dim":
+                    dim = int(v)
+                    break
+    if data_type == 100:
+        return gen_binary_vectors(nq, dim)
+    if data_type == 101:
+        return gen_float_vectors(nq, dim)
 
 
 def gen_float_vectors(nb, dim):
@@ -188,19 +208,49 @@ def gen_index_params(index_type=None):
         index_params = ct.all_index_params_map[index_type]
     extra_params = []
     for k, v in index_params.items():
-        item = {"key": k, "value": v}
+        item = {"key": k, "value": json.dumps(v) if isinstance(v, dict) else str(v)}
         extra_params.append(item)
+    return extra_params
+
+def gen_search_param_by_index_type(index_type, metric_type="L2"):
+    search_params = []
+    if index_type in ["FLAT", "IVF_FLAT", "IVF_SQ8", "IVF_PQ"]:
+        for nprobe in [10]:
+            ivf_search_params = {"metric_type": metric_type, "params": {"nprobe": nprobe}}
+            search_params.append(ivf_search_params)
+    elif index_type in ["BIN_FLAT", "BIN_IVF_FLAT"]:
+        for nprobe in [10]:
+            bin_search_params = {"metric_type": "HAMMING", "params": {"nprobe": nprobe}}
+            search_params.append(bin_search_params)
+    elif index_type in ["HNSW"]:
+        for ef in [64]:
+            hnsw_search_param = {"metric_type": metric_type, "params": {"ef": ef}}
+            search_params.append(hnsw_search_param)
+    elif index_type == "ANNOY":
+        for search_k in [1000]:
+            annoy_search_param = {"metric_type": metric_type, "params": {"search_k": search_k}}
+            search_params.append(annoy_search_param)
+    else:
+        log.info("Invalid index_type.")
+        raise Exception("Invalid index_type.")
+    return search_params
 
 
-def gen_search_params(search_params=None, anns_fields=ct.default_float_vec_field_name, topk=ct.default_top_k):
-    if search_params is None:
-        search_params = ct.default_search_params
+def gen_search_params(index_type=None, anns_field=ct.default_float_vec_field_name,
+                      topk=ct.default_top_k):
+    if index_type is None:
+        search_params = gen_search_param_by_index_type(ct.default_index_type)[0]
+    else:
+        search_params = gen_search_param_by_index_type(index_type)[0]
     extra_params = []
     for k, v in search_params.items():
-        item = {"key": k, "value": v}
+        item = {"key": k, "value": json.dumps(v) if isinstance(v, dict) else str(v)}
         extra_params.append(item)
-    extra_params.append({"key": "anns_fields", "value": anns_fields})
-    extra_params.append({"key": "topk", "value": topk})
+    extra_params.append({"key": "anns_field", "value": anns_field})
+    extra_params.append({"key": "topk", "value": str(topk)})
+    return extra_params
+
+
 
 
 def gen_search_vectors(dim, nb, is_binary=False):
