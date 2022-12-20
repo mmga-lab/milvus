@@ -45,7 +45,7 @@ class EntityService:
         return self._entity.delete(payload)
 
     def insert(self, base=None, collection_name=None, db_name=None, fields_data=None, hash_keys=None, num_rows=None,
-               partition_name=None):
+               partition_name=None, check_task=True):
         payload = {
             "base": base,
             "collection_name": collection_name,
@@ -63,9 +63,13 @@ class EntityService:
         #                                num_rows=num_rows,
         #                                partition_name=partition_name)
         # payload = payload.dict()
-        return self._entity.insert(payload)
+        rsp = self._entity.insert(payload)
+        if check_task:
+            assert rsp["status"] == {}
+            assert rsp["insert_cnt"] == num_rows
+        return rsp
 
-    def flush(self, base=None, collection_names=None, db_name=None):
+    def flush(self, base=None, collection_names=None, db_name=None, check_task=True):
         payload = {
             "base": base,
             "collection_names": collection_names,
@@ -75,7 +79,9 @@ class EntityService:
         #                               collection_names=collection_names,
         #                               db_name=db_name)
         # payload = payload.dict()
-        return self._entity.flush(payload)
+        rsp = self._entity.flush(payload)
+        if check_task:
+            assert rsp["status"] == {}
 
     def get_persistent_segment_info(self, base=None, collection_name=None, db_name=None):
         payload = {
@@ -98,7 +104,8 @@ class EntityService:
         return self._entity.get_flush_state(payload)
 
     def query(self, base=None, collection_name=None, db_name=None, expr=None,
-              guarantee_timestamp=None, output_fields=None, partition_names=None, travel_timestamp=None):
+              guarantee_timestamp=None, output_fields=None, partition_names=None, travel_timestamp=None,
+              check_task=True):
         payload = {
             "base": base,
             "collection_name": collection_name,
@@ -114,7 +121,16 @@ class EntityService:
         #                               guarantee_timestamp=guarantee_timestamp, output_fields=output_fields,
         #                               partition_names=partition_names, travel_timestamp=travel_timestamp)
         # payload = payload.dict()
-        return self._entity.query(payload)
+        rsp = self._entity.query(payload)
+        if check_task:
+            fields_data = rsp["fields_data"]
+            for field_data in fields_data:
+                if field_data["field_name"] in expr:
+                    data = field_data["Field"]["Scalars"]["Data"]["LongData"]["data"]
+                    for d in data:
+                        s = expr.replace(field_data["field_name"], str(d))
+                        assert eval(s) is True
+        return rsp
 
     def get_query_segment_info(self, base=None, collection_name=None, db_name=None):
         payload = {
@@ -131,7 +147,7 @@ class EntityService:
     def search(self, base=None, collection_name=None, vectors=None, db_name=None, dsl=None,
                output_fields=None, dsl_type=1,
                guarantee_timestamp=None, partition_names=None, placeholder_group=None,
-               search_params=None, travel_timestamp=None):
+               search_params=None, travel_timestamp=None, check_task=True):
         payload = {
             "base": base,
             "collection_name": collection_name,
@@ -146,13 +162,19 @@ class EntityService:
             "search_params": search_params,
             "travel_timestamp": travel_timestamp
         }
-        log.info(payload)
         # payload = server.SearchRequest(base=base, collection_name=collection_name, db_name=db_name, dsl=dsl,
         #                                dsl_type=dsl_type, guarantee_timestamp=guarantee_timestamp,
         #                                partition_names=partition_names, placeholder_group=placeholder_group,
         #                                search_params=search_params, travel_timestamp=travel_timestamp)
         # payload = payload.dict()
-        return self._entity.search(payload)
+        rsp = self._entity.search(payload)
+        if check_task:
+            assert rsp["status"] == {}
+            assert rsp["results"]["num_queries"] == len(vectors)
+            assert len(rsp["results"]["ids"]["IdField"]["IntId"]["data"]) == sum(rsp["results"]["topks"])
+        return rsp
+
+
 
 
 

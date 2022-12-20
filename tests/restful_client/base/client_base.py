@@ -38,6 +38,7 @@ class Base:
 
     def teardown_method(self, method):
         res = self.collection_service.has_collection(collection_name=self.collection_name)
+        log.info(f"collection {self.collection_name} exists: {res}")
         if res["value"] is True:
             res = self.collection_service.drop_collection(self.collection_name)
             log.info(f"drop collection {self.collection_name} res: {res}")

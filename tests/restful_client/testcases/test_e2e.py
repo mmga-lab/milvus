@@ -27,7 +27,7 @@ class TestDefault(TestBase):
         res = self.collection_service.load_collection(collection_name=collection_name)
         log.info(f"load collection {collection_name}, response: {res}")
 
-        sleep(2)
+        sleep(5)
         # search
         vectors = cf.gen_vectors(nq=ct.default_nq, schema=schema)
         res = self.entity_service.search(collection_name=collection_name, vectors=vectors,
@@ -43,6 +43,7 @@ class TestDefault(TestBase):
         log.info(f"hybrid search collection {collection_name}, response: {res}")
         # query
         res = self.entity_service.query(collection_name=collection_name, expr=ct.default_expr)
+
         log.info(f"query collection {collection_name}, response: {res}")
 
 
