@@ -102,5 +102,5 @@ class MilvusSys:
 
 
 if __name__ == '__main__':
-    connections.connect(host="10.96.250.111", port="19530")
+    connections.connect(host="10.101.169.249", port="19530")
     ms = MilvusSys()

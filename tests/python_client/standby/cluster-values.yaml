@@ -3,28 +3,28 @@ cluster:
 image:
   all:
     repository: harbor.milvus.io/milvus/milvus
-    tag: wayblink-mep-30-debug-378ed54-20230104
+    tag: wayblink-mep-30-debug-2.2-ce6092e-20230106
     pullPolicy: IfNotPresent
 
 rootCoordinator:
   replicas: 2
   activeStandby:
-    enabled: true  # Enable active-standby when you set multiple replicas for root coordinator  
+    enabled: true  # Enable active-standby when you set multiple replicas for root coordinator
 
 queryCoordinator:
   replicas: 2
   activeStandby:
-    enabled: true  # Enable active-standby when you set multiple replicas for root coordinator  
+    enabled: true  # Enable active-standby when you set multiple replicas for root coordinator
 
 dataCoordinator:
   replicas: 2
   activeStandby:
-    enabled: true  # Enable active-standby when you set multiple replicas for root coordinator  
+    enabled: true  # Enable active-standby when you set multiple replicas for root coordinator
 
 indexCoordinator:
   replicas: 2
   activeStandby:
-    enabled: true  # Enable active-standby when you set multiple replicas for root coordinator  
+    enabled: true  # Enable active-standby when you set multiple replicas for root coordinator
 
 
 etcd:

@@ -1,0 +1,12 @@
+
+chaos_inject_time:
+  2021-08-19T15:00:00Z
+grafaana_url:
+  http://grafana.milvus.io
+grafaana_api_key:
+  xxxxxx
+beginning_activated_coordinator:
+  xxxxxx
+expected_breakdown_time:
+  90s
+

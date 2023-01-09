@@ -3,12 +3,17 @@ import os.path
 import time
 
 import requests
+import etcd3
 from pymilvus import connections
 from kubernetes import client, config
 from kubernetes.client.rest import ApiException
 from common.milvus_sys import MilvusSys
 from utils.util_log import test_log as log
+from utils.util_common import find_value_by_key
 from common.common_type import in_cluster_env
+
+import urllib3
+urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
 
 def init_k8s_client_config():
@@ -316,9 +321,49 @@ def get_metrics_querynode_sq_req_count():
         raise Exception(-1, f"Failed to get metrics with status code {response.status_code}")
 
 
+def get_pod_logs(namespace, pod_name):
+    init_k8s_client_config()
+    api_instance = client.CoreV1Api()
+    log.debug(f'Start to read {pod_name} log')
+    logs = api_instance.read_namespaced_pod_log(name=pod_name, namespace=namespace, async_req=True)
+    return logs
+
+
+def find_activate_standby_coord_pod(namespace, release_name, coord_type):
+    init_k8s_client_config()
+    api_instance = client.CoreV1Api()
+    etcd_service_name = release_name + "-etcd"
+    service = api_instance.read_namespaced_service(name=etcd_service_name, namespace=namespace)
+    etcd_cluster_ip = service.spec.cluster_ip
+    etcd_port = service.spec.ports[0].port
+    etcd = etcd3.client(host=etcd_cluster_ip, port=etcd_port)
+    v = etcd.get(f'by-dev/meta/session/{coord_type}')
+    activated_pod_ip = json.loads(v[0])["Address"].split(":")[0]
+    label_selector = f'app.kubernetes.io/instance={release_name}, component={coord_type}'
+    items = get_pod_list(namespace, label_selector=label_selector)
+    all_pod_list = []
+    for item in items:
+        pod_name = item.metadata.name
+        all_pod_list.append(pod_name)
+    activate_pod_list = []
+    standby_pod_list = []
+    for item in items:
+        pod_name = item.metadata.name
+        ip = item.status.pod_ip
+        if ip == activated_pod_ip:
+            activate_pod_list.append(pod_name)
+    standby_pod_list = list(set(all_pod_list) - set(activate_pod_list))
+    return activate_pod_list, standby_pod_list
+
+
+
 if __name__ == '__main__':
-    label = "app.kubernetes.io/name=milvus, component=querynode"
-    instance_name = get_milvus_instance_name("chaos-testing", "10.96.250.111")
-    res = get_pod_list("chaos-testing", label_selector=label)
-    m = get_pod_ip_name_pairs("chaos-testing", label_selector=label)
-    export_pod_logs(namespace='chaos-testing', label_selector=label)
+    # for coord in ["indexcoord"]:
+    for coord in ["rootcoord", "datacoord", "indexcoord", "querycoord"]:
+        activate_pod_list, standby_pod_list = find_activate_standby_coord_pod("chaos-testing", "rootcoord-standby-test", coord)
+        print(f"activate pod {activate_pod_list}, standby pod {standby_pod_list}")
+    # label = "app.kubernetes.io/name=milvus, component=querynode"
+    # instance_name = get_milvus_instance_name("chaos-testing", "10.96.250.111")
+    # res = get_pod_list("chaos-testing", label_selector=label)
+    # m = get_pod_ip_name_pairs("chaos-testing", label_selector=label)
+    # export_pod_logs(namespace='chaos-testing', label_selector=label)

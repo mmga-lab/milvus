@@ -69,13 +69,13 @@ class TestOperations(TestBase):
         cc.start_monitor_threads(self.health_checkers)
         log.info("*********************Load Start**********************")
         # wait request_duration
-        request_duration = request_duration.replace("h","*3600+").replace("m","*60+").replace("s","")
+        request_duration = request_duration.replace("h", "*3600+").replace("m", "*60+").replace("s", "")
         if request_duration[-1] == "+":
             request_duration = request_duration[:-1]
         request_duration = eval(request_duration)
         for i in range(10):
             sleep(request_duration//10)
-            for k,v in self.health_checkers.items():
+            for k, v in self.health_checkers.items():
                 v.check_result()
         if is_check:
             assert_statistic(self.health_checkers)
