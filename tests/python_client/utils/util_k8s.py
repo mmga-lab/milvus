@@ -1,7 +1,7 @@
 import json
 import os.path
 import time
-
+import threading
 import requests
 import etcd3
 from pymilvus import connections
@@ -9,6 +9,7 @@ from kubernetes import client, config
 from kubernetes.client.rest import ApiException
 from common.milvus_sys import MilvusSys
 from utils.util_log import test_log as log
+from chaos import chaos_commons as cc
 from utils.util_common import find_value_by_key
 from common.common_type import in_cluster_env
 
@@ -355,6 +356,28 @@ def find_activate_standby_coord_pod(namespace, release_name, coord_type):
     standby_pod_list = list(set(all_pod_list) - set(activate_pod_list))
     return activate_pod_list, standby_pod_list
 
+
+def reset_healthy_checker_after_standby_activated(namespace, release_name, coord_type, health_checkers, timeout=360):
+    activate_pod_list_before, standby_pod_list_before = find_activate_standby_coord_pod(namespace, release_name, coord_type)
+    standby_activated = False
+    start_time = time.time()
+    end_time = time.time()
+    while not standby_activated and end_time - start_time < timeout:
+        activate_pod_list_after, standby_pod_list_after = find_activate_standby_coord_pod(namespace, release_name, coord_type)
+        if activate_pod_list_after[0] in standby_pod_list_before:
+            standby_activated = True
+            log.info(f"Standby {coord_type} pod {activate_pod_list_after[0]} activated")
+            break
+        time.sleep(10)
+        end_time = time.time()
+    if standby_activated:
+        time.sleep(30)
+        cc.reset_counting(health_checkers)
+        for k, v in health_checkers.items():
+            log.info("reset health checkers")
+            v.check_result()
+    else:
+        log.info(f"Standby {coord_type} pod does not switch standby mode")
 
 
 if __name__ == '__main__':

@@ -126,6 +126,7 @@ class TestChaosApply:
                 sleep(2)
         recovery_time = time.time() - start_time
         log.info(f"recovery time: {recovery_time}")
+        time.sleep(30)
         activate_pod_list_after_chaos, standby_pod_list_after_chaos = find_activate_standby_coord_pod(self.milvus_ns, self.release_name,
                                                                                                       target_component)
         log.info(f"activated pod list: {activate_pod_list_after_chaos}, standby pod list: {standby_pod_list_after_chaos}")
