@@ -359,6 +359,8 @@ def find_activate_standby_coord_pod(namespace, release_name, coord_type):
 
 def reset_healthy_checker_after_standby_activated(namespace, release_name, coord_type, health_checkers, timeout=360):
     activate_pod_list_before, standby_pod_list_before = find_activate_standby_coord_pod(namespace, release_name, coord_type)
+    log.info(f"check standby switch: activate_pod_list_before {activate_pod_list_before}, "
+             f"standby_pod_list_before {standby_pod_list_before}")
     standby_activated = False
     start_time = time.time()
     end_time = time.time()
@@ -367,6 +369,8 @@ def reset_healthy_checker_after_standby_activated(namespace, release_name, coord
         if activate_pod_list_after[0] in standby_pod_list_before:
             standby_activated = True
             log.info(f"Standby {coord_type} pod {activate_pod_list_after[0]} activated")
+            log.info(f"check standby switch: activate_pod_list_after {activate_pod_list_after}, "
+                     f"standby_pod_list_after {standby_pod_list_after}")
             break
         time.sleep(10)
         end_time = time.time()
