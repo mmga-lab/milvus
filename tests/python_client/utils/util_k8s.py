@@ -339,6 +339,7 @@ def find_activate_standby_coord_pod(namespace, release_name, coord_type):
     etcd_port = service.spec.ports[0].port
     etcd = etcd3.client(host=etcd_cluster_ip, port=etcd_port)
     v = etcd.get(f'by-dev/meta/session/{coord_type}')
+    log.info(f"coord_type: {coord_type}, etcd session value: {v}")
     activated_pod_ip = json.loads(v[0])["Address"].split(":")[0]
     label_selector = f'app.kubernetes.io/instance={release_name}, component={coord_type}'
     items = get_pod_list(namespace, label_selector=label_selector)
@@ -365,13 +366,16 @@ def reset_healthy_checker_after_standby_activated(namespace, release_name, coord
     start_time = time.time()
     end_time = time.time()
     while not standby_activated and end_time - start_time < timeout:
-        activate_pod_list_after, standby_pod_list_after = find_activate_standby_coord_pod(namespace, release_name, coord_type)
-        if activate_pod_list_after[0] in standby_pod_list_before:
-            standby_activated = True
-            log.info(f"Standby {coord_type} pod {activate_pod_list_after[0]} activated")
-            log.info(f"check standby switch: activate_pod_list_after {activate_pod_list_after}, "
-                     f"standby_pod_list_after {standby_pod_list_after}")
-            break
+        try:
+            activate_pod_list_after, standby_pod_list_after = find_activate_standby_coord_pod(namespace, release_name, coord_type)
+            if activate_pod_list_after[0] in standby_pod_list_before:
+                standby_activated = True
+                log.info(f"Standby {coord_type} pod {activate_pod_list_after[0]} activated")
+                log.info(f"check standby switch: activate_pod_list_after {activate_pod_list_after}, "
+                         f"standby_pod_list_after {standby_pod_list_after}")
+                break
+        except Exception as e:
+            log.error(f"Exception when check standby switch: {e}")
         time.sleep(10)
         end_time = time.time()
     if standby_activated:
