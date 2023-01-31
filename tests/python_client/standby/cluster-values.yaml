@@ -32,6 +32,9 @@ etcd:
   image:
     repository: milvusdb/etcd
     tag: 3.5.0-r7
+  extraEnvVars:
+    - name: ETCD_LOG_LEVEL
+      value: "debug"
 
 minio:
   resources:
