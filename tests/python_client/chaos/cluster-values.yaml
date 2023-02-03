@@ -6,6 +6,26 @@ image:
     tag: master-latest
     pullPolicy: IfNotPresent
 
+rootCoordinator:
+  replicas: 2
+  activeStandby:
+    enabled: true
+
+queryCoordinator:
+  replicas: 2
+  activeStandby:
+    enabled: true
+
+dataCoordinator:
+  replicas: 2
+  activeStandby:
+    enabled: true
+
+indexCoordinator:
+  replicas: 2
+  activeStandby:
+    enabled: true
+
 etcd:
   replicaCount: 3
   image:
