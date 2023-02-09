@@ -2124,7 +2124,7 @@ class TestBulkInsertInvalidParams(TestcaseBaseBulkInsert):
             rows=entities,
             dim=dim,
             auto_id=False,
-            data_fields=default_multi_fields,
+            data_fields=multi_fields,
             err_type=DataErrorType.typo_on_bool,
             force=True,
         )
@@ -2160,15 +2160,6 @@ class TestBulkInsertInvalidParams(TestcaseBaseBulkInsert):
             ) or failed_reason2 in state.infos.get("failed_reason", "")
         assert self.collection_wrap.num_entities == 0
 
-        #
-        # assert success
-        # assert self.collection_wrap.num_entities == entities
-        #
-        # self.collection_wrap.load()
-        #
-        # # the pk value was automatically convert to int from float
-        # res, _ = self.collection_wrap.query(expr=f"{float_field} in [1.0]", output_fields=[float_field])
-        # assert res[0].get(float_field, 0) == 1.0
 
     @pytest.mark.tags(CaseLabel.L3)
     @pytest.mark.parametrize("auto_id", [True, False])
