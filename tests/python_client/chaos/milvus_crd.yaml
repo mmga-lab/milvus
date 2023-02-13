@@ -29,10 +29,14 @@ spec:
     msgStreamType: kafka
     etcd:
       inCluster:
+        deletionPolicy: Retain
+        pvcDeletion: false
         values:
           replicaCount: 3
     kafka: 
       inCluster:
+        deletionPolicy: Retain
+        pvcDeletion: false
         values:
           replicaCount: 3
           defaultReplicationFactor: 2
@@ -45,6 +49,8 @@ spec:
               enabled: true      
     pulsar:
       inCluster:
+        deletionPolicy: Retain
+        pvcDeletion: false
         values:
           components: 
             autorecovery: false
@@ -136,6 +142,8 @@ spec:
                 -XX:+ExitOnOutOfMemoryError
     storage:
       inCluster:
+        deletionPolicy: Retain
+        pvcDeletion: false
         values:
-          mode: cluster
+          mode: distributed
   
