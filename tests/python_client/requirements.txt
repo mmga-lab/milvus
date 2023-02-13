@@ -39,3 +39,6 @@ h5py==3.7.0
 
 # for log
 loguru==0.6.0
+
+# for topic delete
+confluent-kafka=2.0.2
