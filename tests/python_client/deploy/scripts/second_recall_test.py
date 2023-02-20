@@ -1,10 +1,19 @@
 import h5py
 import numpy as np
 import time
+import sys
 from pathlib import Path
 from loguru import logger
 from pymilvus import connections, Collection
 
+logger.remove()
+logger.add(sys.stderr, format= "<green>{time:YYYY-MM-DD HH:mm:ss.SSS}</green> | "
+    "<level>{level: <8}</level> | "
+    "<cyan>{thread.name}</cyan> |"
+    "<cyan>{name}</cyan>:<cyan>{function}</cyan>:<cyan>{line}</cyan> - <level>{message}</level>",
+    level="INFO")
+
+all_index_types = ["FLAT", "IVF_FLAT", "IVF_SQ8", "IVF_PQ", "HNSW", "ANNOY"]
 
 def read_benchmark_hdf5(file_path):
 
@@ -16,18 +25,43 @@ def read_benchmark_hdf5(file_path):
     return train, test, neighbors
 
 
+def gen_search_param(index_type, metric_type="L2"):
+    search_params = []
+    if index_type in ["FLAT", "IVF_FLAT", "IVF_SQ8", "IVF_PQ"]:
+        for nprobe in [10]:
+            ivf_search_params = {"metric_type": metric_type, "params": {"nprobe": nprobe}}
+            search_params.append(ivf_search_params)
+    elif index_type in ["BIN_FLAT", "BIN_IVF_FLAT"]:
+        for nprobe in [10]:
+            bin_search_params = {"metric_type": "HAMMING", "params": {"nprobe": nprobe}}
+            search_params.append(bin_search_params)
+    elif index_type in ["HNSW"]:
+        for ef in [64]:
+            hnsw_search_param = {"metric_type": metric_type, "params": {"ef": ef}}
+            search_params.append(hnsw_search_param)
+    elif index_type == "ANNOY":
+        for search_k in [1000]:
+            annoy_search_param = {"metric_type": metric_type, "params": {"search_k": search_k}}
+            search_params.append(annoy_search_param)
+    else:
+        logger.info("Invalid index_type.")
+        raise Exception("Invalid index_type.")
+    return search_params[0]
+
+
 dim = 128
 TIMEOUT = 200
 
 
-def search_test(host="127.0.0.1"):
+def search_test(host="127.0.0.1", index_type="HNSW"):
+    logger.info(f"recall test for index type {index_type}")
     file_path = f"{str(Path(__file__).absolute().parent.parent.parent)}/assets/ann_hdf5/sift-128-euclidean.hdf5"
     train, test, neighbors = read_benchmark_hdf5(file_path)
     connections.connect(host=host, port="19530")
-    collection = Collection(name="sift_128_euclidean")
+    collection = Collection(name=f"sift_128_euclidean_{index_type}")
     nq = 10000
     topK = 100
-    search_params = {"metric_type": "L2", "params": {"nprobe": 10}}
+    search_params = gen_search_param(index_type)
     for i in range(3):
         t0 = time.time()
         logger.info(f"\nSearch...")
@@ -60,8 +94,24 @@ def search_test(host="127.0.0.1"):
 
 if __name__ == "__main__":
     import argparse
+    import threading
     parser = argparse.ArgumentParser(description='config for recall test')
     parser.add_argument('--host', type=str, default="127.0.0.1", help='milvus server ip')
     args = parser.parse_args()
     host = args.host
-    search_test(host)
+    tasks = []
+    for index_type in all_index_types:
+        t = threading.Thread(target=search_test, name=index_type, args=(host, index_type))
+        tasks.append(t)
+    for t in tasks:
+        t.start()
+    failed_tasks = []
+    for t in tasks:
+        try:
+            t.join()
+        except Exception as e:
+            failed_tasks.append((t.name, e))
+            logger.error(e)
+    for task in failed_tasks:
+        logger.error(f"task {task[0]} failed with error {task[1]}")
+    assert len(failed_tasks) == 0, f"{failed_tasks} tasks failed"
