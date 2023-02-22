@@ -198,7 +198,7 @@ def milvus_recall_test(host='127.0.0.1', index_type="HNSW"):
             sum_radio = sum_radio + len(tmp) / len(item)
         recall = round(sum_radio / len(result_ids), 3)
         logger.info(f"recall={recall}")
-        assert 0.95 <= recall < 1.0, f"recall is {recall}, less than 0.95"
+        assert 0.95 <= recall < 1.0, f"recall is {recall}, less than 0.95, greater than or equal to 1.0"
     # query
     expr = "int64 in [2,4,6,8]"
     output_fields = ["int64", "float"]
@@ -227,8 +227,8 @@ if __name__ == "__main__":
         try:
             t.join()
         except Exception as e:
-            failed_tasks.append((t.name, e))
-            logger.error(e)
+            failed_tasks.append((t.name, t.exc))
+            logger.error(f"{t.name}: {t.exc}")
     logger.info("start to check failed tasks")
     for task in failed_tasks:
         logger.error(f"task {task[0]} failed with error {task[1]}")
