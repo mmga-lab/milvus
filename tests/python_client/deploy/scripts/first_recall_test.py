@@ -1,3 +1,4 @@
+import threading
 import h5py
 import numpy as np
 import time
@@ -20,8 +21,24 @@ logger.add(sys.stderr, format= "<green>{time:YYYY-MM-DD HH:mm:ss.SSS}</green> | 
 
 pymilvus_version = pymilvus.__version__
 
+class MyThread(threading.Thread):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.exc = None  # store exception here
 
-all_index_types = ["FLAT", "IVF_FLAT", "IVF_SQ8", "IVF_PQ", "HNSW", "ANNOY"]
+    def run(self):
+        try:
+            super().run()
+        except Exception as e:
+            self.exc = e  # save exception
+
+    def join(self):
+        super().join()
+        if self.exc:  # if exception occurred
+            raise self.exc
+
+
+all_index_types = ["IVF_FLAT", "IVF_SQ8", "IVF_PQ", "HNSW", "ANNOY"]
 default_index_params = [{}, {"nlist": 128}, {"nlist": 128}, {"nlist": 128, "m": 16, "nbits": 8},
                         {"M": 48, "efConstruction": 500}, {"n_trees": 50}]
 index_params_map = dict(zip(all_index_types, default_index_params))
@@ -201,7 +218,7 @@ if __name__ == "__main__":
     host = args.host
     tasks = []
     for index_type in all_index_types:
-        t = threading.Thread(target=milvus_recall_test, name=index_type, args=(host, index_type))
+        t = MyThread(target=milvus_recall_test, name=index_type, args=(host, index_type))
         tasks.append(t)
     for t in tasks:
         t.start()
@@ -212,6 +229,7 @@ if __name__ == "__main__":
         except Exception as e:
             failed_tasks.append((t.name, e))
             logger.error(e)
+    logger.info("start to check failed tasks")
     for task in failed_tasks:
         logger.error(f"task {task[0]} failed with error {task[1]}")
     assert len(failed_tasks) == 0, f"{failed_tasks} tasks failed"

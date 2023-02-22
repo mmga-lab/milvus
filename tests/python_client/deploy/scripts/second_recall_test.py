@@ -2,6 +2,7 @@ import h5py
 import numpy as np
 import time
 import sys
+import threading
 from pathlib import Path
 from loguru import logger
 from pymilvus import connections, Collection
@@ -13,7 +14,25 @@ logger.add(sys.stderr, format= "<green>{time:YYYY-MM-DD HH:mm:ss.SSS}</green> | 
     "<cyan>{name}</cyan>:<cyan>{function}</cyan>:<cyan>{line}</cyan> - <level>{message}</level>",
     level="INFO")
 
-all_index_types = ["FLAT", "IVF_FLAT", "IVF_SQ8", "IVF_PQ", "HNSW", "ANNOY"]
+
+class MyThread(threading.Thread):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.exc = None  # store exception here
+
+    def run(self):
+        try:
+            super().run()
+        except Exception as e:
+            self.exc = e  # save exception
+
+    def join(self):
+        super().join()
+        if self.exc:  # if exception occurred
+            raise self.exc
+
+
+all_index_types = ["IVF_FLAT", "IVF_SQ8", "IVF_PQ", "HNSW", "ANNOY"]
 
 def read_benchmark_hdf5(file_path):
 
@@ -101,7 +120,7 @@ if __name__ == "__main__":
     host = args.host
     tasks = []
     for index_type in all_index_types:
-        t = threading.Thread(target=search_test, name=index_type, args=(host, index_type))
+        t = MyThread(target=search_test, name=index_type, args=(host, index_type))
         tasks.append(t)
     for t in tasks:
         t.start()
