@@ -30,7 +30,7 @@ def gen_search_param(index_type, metric_type="L2"):
             bin_search_params = {"metric_type": "HAMMING", "params": {"nprobe": nprobe}}
             search_params.append(bin_search_params)
     elif index_type in ["HNSW"]:
-        for ef in [50]:
+        for ef in [100]:
             hnsw_search_param = {"metric_type": metric_type, "params": {"ef": ef}}
             search_params.append(hnsw_search_param)
     elif index_type == "ANNOY":
