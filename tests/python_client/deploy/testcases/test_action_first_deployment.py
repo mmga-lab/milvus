@@ -104,7 +104,7 @@ class TestActionFirstDeployment(TestDeployBase):
 
         # init collection and insert with small size data without flush to get growing segment
         collection_w = self.init_collection_general(insert_data=True, is_binary=is_binary, nb=3000,
-                                                    is_flush=False, is_index=True, name=name)[0]
+                                                    is_flush=False, is_index=False, name=name)[0]
         # params for creating index
         if is_binary:
             default_index_field = ct.default_binary_vec_field_name
