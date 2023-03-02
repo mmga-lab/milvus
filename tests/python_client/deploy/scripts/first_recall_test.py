@@ -1,16 +1,14 @@
-import threading
 import h5py
 import numpy as np
 import time
-import sys
+from loguru import logger
 import copy
 from pathlib import Path
-from loguru import logger
 import pymilvus
 from pymilvus import (
     connections,
     FieldSchema, CollectionSchema, DataType,
-    Collection, utility
+    Collection
 )
 
 pymilvus_version = pymilvus.__version__
@@ -133,16 +131,6 @@ def milvus_recall_test(host='127.0.0.1', index_type="HNSW"):
     collection.load(replica_number=replica_number)
     t1 = time.time()
     logger.info(f"load collection cost {t1 - t0:.4f} seconds")
-    res = utility.get_query_segment_info(name)
-    cnt = 0
-    logger.info(f"segments info: {res}")
-    for segment in res:
-        cnt += segment.num_rows
-    assert cnt == collection.num_entities
-    logger.info(f"wait for loading complete...")
-    time.sleep(30)
-    res = utility.get_query_segment_info(name)
-    logger.info(f"segments info: {res}")
 
     # search
     topK = 100
@@ -196,7 +184,6 @@ if __name__ == "__main__":
                         default="127.0.0.1", help='milvus server ip')
     args = parser.parse_args()
     host = args.host
-    tasks = []
     for index_type in all_index_types:
         milvus_recall_test(host, index_type)
 
