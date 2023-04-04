@@ -52,9 +52,9 @@ def update_key_name(node, modify_k, modify_k_new):
     return node
 
 
-def get_collections():
+def get_collections(file_name="all_collections.json"):
     try:
-        with open("/tmp/ci_logs/all_collections.json", "r") as f:
+        with open(f"/tmp/ci_logs/{file_name}", "r") as f:
             data = json.load(f)
             collections = data["all"]
     except Exception as e:
