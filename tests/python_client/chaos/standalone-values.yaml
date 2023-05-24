@@ -39,6 +39,8 @@ pulsar:
 
 extraConfigFiles:
   user.yaml: |+
+    mq:
+      type: natsmq
     dataNode:
       memory:
         forceSyncEnable: false
