@@ -80,7 +80,23 @@ class TestOperations(TestBase):
             sleep(request_duration // 10)
             for k, v in self.health_checkers.items():
                 v.check_result()
+        for k, v in self.health_checkers.items():
+            v.pause()
+        for k, v in self.health_checkers.items():
+            v.check_result()
+            log.info(f"{k} rto: {v.get_rto()}")
         if is_check:
             assert_statistic(self.health_checkers, succ_rate_threshold=0.98)
             assert_expectations()
+            # get each checker's rto
+            for k, v in self.health_checkers.items():
+                log.info(f"{k} rto: {v.get_rto()}")
+                rto = v.get_rto()
+                assert rto < 30,  f"expect 30s but get {rto}s"  # rto should be less than 30s
+
+            if Op.insert in self.health_checkers:
+                # verify the no insert data loss
+                log.info("*********************Verify Data Completeness**********************")
+                self.health_checkers[Op.insert].verify_data_completeness()
+
         log.info("*********************Chaos Test Completed**********************")
