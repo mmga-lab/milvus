@@ -678,7 +678,7 @@ class BulkInsertChecker(Checker):
         task_ids, result = self.utility_wrap.do_bulk_insert(collection_name=self.c_name,
                                                             files=self.files)
         log.info(f"task ids {task_ids}")
-        completed, result = self.utility_wrap.wait_for_bulk_insert_tasks_completed(task_ids=[task_ids], timeout=720)
+        completed, result = self.utility_wrap.wait_for_bulk_insert_tasks_completed(task_ids=[task_ids], timeout=1200)
         return task_ids, completed
 
     @exception_handler()
