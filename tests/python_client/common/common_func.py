@@ -484,7 +484,7 @@ def gen_default_list_data_for_bulk_insert(nb=ct.default_nb, varchar_len=2000, wi
     str_value = gen_str_by_length(length=varchar_len)
     int_values = [i for i in range(nb)]
     float_values = [np.float32(i) for i in range(nb)]
-    string_values = [f"{str(i)}_{str_value}" for i in range(nb)]
+    string_values = []
     float_vec_values = []  # placeholder for float_vec
     data = [int_values, float_values, string_values, float_vec_values]
     if with_varchar_field is False:
@@ -507,6 +507,7 @@ def get_list_data_by_schema(nb=ct.default_nb, schema=None):
             tmp[field.name] = gen_data_by_type(field)
         data.append(tmp)
     return data
+
 
 def gen_data_by_type(field):
     data_type = field.dtype
@@ -537,6 +538,8 @@ def gen_data_by_type(field):
 def gen_json_files_for_bulk_insert(data, schema, data_dir, **kwargs):
     nb = kwargs.get("nb", ct.default_nb)
     dim = kwargs.get("dim", ct.default_dim)
+    with_varchar_field = kwargs.get("with_varchar_field", True)
+    varchar_len = kwargs.get("varchar_len", 2000)
     fields_name = [field.name for field in schema.fields]
     file_name = f"bulk_insert_data_source_dim_{dim}_nb_{nb}.json"
     files = [file_name]
@@ -547,7 +550,10 @@ def gen_json_files_for_bulk_insert(data, schema, data_dir, **kwargs):
         f.write('"rows":[')
         f.write("\n")
         for i in range(nb):
-            entity_value = [field_values[i] for field_values in data[:-1]]
+            entity_value = [field_values[i] for field_values in data[:2]]
+            if with_varchar_field:
+                str_value = gen_str_by_length(length=varchar_len)
+                entity_value.append(str_value)
             vector = [random.random() for _ in range(dim)]
             entity_value.append(vector)
             entity = dict(zip(fields_name, entity_value))
@@ -564,6 +570,7 @@ def gen_json_files_for_bulk_insert(data, schema, data_dir, **kwargs):
 def gen_npy_files_for_bulk_insert(data, schema, data_dir, **kwargs):
     nb = kwargs.get("nb", ct.default_nb)
     dim = kwargs.get("dim", ct.default_dim)
+    varchar_len = kwargs.get("varchar_len", 2000)
     fields_name = [field.name for field in schema.fields]
     files = []
     for field in fields_name:
@@ -577,6 +584,12 @@ def gen_npy_files_for_bulk_insert(data, schema, data_dir, **kwargs):
                     vector = np.array([[random.random() for _ in range(dim)]])
                     npaa.append(vector)
 
+        elif "varchar" in file:
+            log.info(f"generate {nb} varchar with length {varchar_len} for {data_source}")
+            with NpyAppendArray(data_source, "wb") as npaa:
+                for j in range(nb):
+                    str_value = gen_str_by_length(length=varchar_len)
+                    npaa.append(str_value)
         else:
             np.save(data_source, np.array(data[i]))
     return files
