@@ -10,9 +10,6 @@ image:
 
 standalone:
   resources:
-    limits:
-      cpu: 8
-      memory: 16Gi
     requests:
       cpu: 4
       memory: 8Gi
@@ -22,20 +19,8 @@ kafka:
   name: kafka
   replicaCount: 3
   defaultReplicationFactor: 2
-
-etcd:
-  replicaCount: 3
-  image:
-    debug: true
-    repository: milvusdb/etcd
-    tag: 3.5.5-r2  
+  
 minio:
   mode: standalone
 pulsar:
   enabled: false
-
-# extraConfigFiles:
-#   user.yaml: |+
-#     dataNode:
-#       memory:
-#         forceSyncEnable: false
