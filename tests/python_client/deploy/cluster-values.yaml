@@ -8,6 +8,11 @@ image:
     tag: master-latest
     pullPolicy: IfNotPresent
 
+queryNode:
+  extraEnv:
+    - name: GOTRACEBACK
+      value: "crash"
+
 etcd:
   replicaCount: 3
   image:

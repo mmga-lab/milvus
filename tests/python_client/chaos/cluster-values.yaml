@@ -26,6 +26,11 @@ kafka:
   replicaCount: 3
   defaultReplicationFactor: 2
 
+queryNode:
+  extraEnv:
+    - name: GOTRACEBACK
+      value: "crash"
+
 pulsar:
   enabled: true
   extra:
