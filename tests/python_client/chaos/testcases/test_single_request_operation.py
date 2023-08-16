@@ -9,7 +9,10 @@ from chaos.checker import (CreateChecker,
                            IndexChecker,
                            DeleteChecker,
                            DropChecker,
-                           Op)
+                           Op,
+                           EventRecords,
+                           ResultAnalyzer
+                           )
 from utils.util_log import test_log as log
 from chaos import chaos_commons as cc
 from common.common_type import CaseLabel
@@ -67,8 +70,11 @@ class TestOperations(TestBase):
         # start the monitor threads to check the milvus ops
         log.info("*********************Test Start**********************")
         log.info(connections.get_connection_addr('default'))
+        event_records = EventRecords()
         c_name = None
+        event_records.insert("init_health_checkers", "start")
         self.init_health_checkers(collection_name=c_name)
+        event_records.insert("init_health_checkers", "finished")
         cc.start_monitor_threads(self.health_checkers)
         log.info("*********************Load Start**********************")
         # wait request_duration
@@ -78,8 +84,14 @@ class TestOperations(TestBase):
         request_duration = eval(request_duration)
         for i in range(10):
             sleep(request_duration // 10)
+            # add an event so that the chaos can start to apply
+            if i == 3:
+                event_records.insert("init_chaos", "ready")
             for k, v in self.health_checkers.items():
                 v.check_result()
+        ra = ResultAnalyzer()
+        ra.get_stage_success_rate()
+        ra.show_result_table()
         if is_check:
             assert_statistic(self.health_checkers, succ_rate_threshold=0.98)
             assert_expectations()

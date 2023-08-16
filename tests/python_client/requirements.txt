@@ -31,17 +31,24 @@ python-benedict==0.24.3
 timeout-decorator==0.5.0
 
 # for bulk insert test
-minio==7.1.5
+minio~=7.1.14
 npy-append-array==0.9.15
-Faker==19.2.0
+Faker~=15.3.4
 
 # for benchmark
 h5py==3.8.0
 
 # for log
-loguru==0.6.0
+loguru~=0.5.3
 
 # util
 psutil==5.9.4
 # for standby test
 etcd-sdk-python==0.0.2
+
+# for chaos anaylszer
+duckdb==0.8.1
+pandas==1.5.3
+prettytable==3.8.0
+pyarrow==11.0.0
+fastparquet==2023.7.0

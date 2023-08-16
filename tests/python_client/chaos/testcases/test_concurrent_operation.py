@@ -9,7 +9,10 @@ from chaos.checker import (InsertChecker,
                            SearchChecker,
                            QueryChecker,
                            DeleteChecker,
-                           Op)
+                           Op,
+                           EventRecords,
+                           ResultAnalyzer
+                           )
 from common.cus_resource_opts import CustomResourceOperations as CusResource
 from utils.util_log import test_log as log
 from chaos import chaos_commons as cc
@@ -91,7 +94,7 @@ class TestOperations(TestBase):
             Op.flush: FlushChecker(collection_name=c_name),
             Op.search: SearchChecker(collection_name=c_name),
             Op.query: QueryChecker(collection_name=c_name),
-            Op.compact:CompactChecker(collection_name=c_name),
+            Op.compact: CompactChecker(collection_name=c_name),
             Op.delete: DeleteChecker(collection_name=c_name),
         }
         self.health_checkers = checkers
@@ -107,11 +110,14 @@ class TestOperations(TestBase):
         # start the monitor threads to check the milvus ops
         log.info("*********************Test Start**********************")
         log.info(connections.get_connection_addr('default'))
+        # event_records = EventRecords()
         c_name = collection_name if collection_name else cf.gen_unique_str("Checker_")
+        # event_records.insert("init_health_checkers", "start")
         self.init_health_checkers(collection_name=c_name)
+        # event_records.insert("init_health_checkers", "finished")
         cc.start_monitor_threads(self.health_checkers)
         log.info("*********************Load Start**********************")
-        request_duration = request_duration.replace("h","*3600+").replace("m","*60+").replace("s","")
+        request_duration = request_duration.replace("h", "*3600+").replace("m", "*60+").replace("s", "")
         if request_duration[-1] == "+":
             request_duration = request_duration[:-1]
         request_duration = eval(request_duration)
@@ -120,6 +126,8 @@ class TestOperations(TestBase):
             for k, v in self.health_checkers.items():
                 v.check_result()
                 # log.info(v.check_result())
+        ra = ResultAnalyzer()
+        ra.get_stage_success_rate()
         if is_check:
             assert_statistic(self.health_checkers)
             assert_expectations()        
