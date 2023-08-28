@@ -10,40 +10,17 @@ from chaos.checker import (InsertChecker,
                            QueryChecker,
                            DeleteChecker,
                            Op,
-                           EventRecords,
                            ResultAnalyzer
                            )
-from common.cus_resource_opts import CustomResourceOperations as CusResource
+from utils.util_k8s import wait_pods_ready, get_milvus_instance_name
 from utils.util_log import test_log as log
 from chaos import chaos_commons as cc
 from common import common_func as cf
+from common.milvus_sys import MilvusSys
 from chaos.chaos_commons import assert_statistic
 from common.common_type import CaseLabel
 from chaos import constants
 from delayed_assert import expect, assert_expectations
-
-
-def assert_statistic(checkers, expectations={}):
-    for k in checkers.keys():
-        # expect succ if no expectations
-        succ_rate = checkers[k].succ_rate()
-        total = checkers[k].total()
-        average_time = checkers[k].average_time
-        if 'compact' in str(k):
-            log.info("skip compact check")
-            log.info(
-                f"Expect Succ: {str(k)} succ rate {succ_rate}, total: {total}, average time: {average_time:.4f}")
-            continue           
-        if expectations.get(k, '') == constants.FAIL:
-            log.info(
-                f"Expect Fail: {str(k)} succ rate {succ_rate}, total: {total}, average time: {average_time:.4f}")
-            expect(succ_rate < 0.49 or total < 2,
-                   f"Expect Fail: {str(k)} succ rate {succ_rate}, total: {total}, average time: {average_time:.4f}")
-        else:
-            log.info(
-                f"Expect Succ: {str(k)} succ rate {succ_rate}, total: {total}, average time: {average_time:.4f}")
-            expect(succ_rate > 0.90 and total > 2,
-                   f"Expect Succ: {str(k)} succ rate {succ_rate}, total: {total}, average time: {average_time:.4f}")
 
 
 def get_all_collections():
@@ -73,7 +50,7 @@ class TestBase:
 class TestOperations(TestBase):
 
     @pytest.fixture(scope="function", autouse=True)
-    def connection(self, host, port, user, password):
+    def connection(self, host, port, user, password, milvus_ns):
         if user and password:
             # log.info(f"connect to {host}:{port} with user {user} and password {password}")
             connections.connect('default', host=host, port=port, user=user, password=password, secure=True)
@@ -85,7 +62,10 @@ class TestOperations(TestBase):
         self.host = host
         self.port = port
         self.user = user
-        self.password = password        
+        self.password = password
+        self.milvus_sys = MilvusSys(alias='default')
+        self.milvus_ns = milvus_ns
+        self.release_name = get_milvus_instance_name(self.milvus_ns, milvus_sys=self.milvus_sys)
 
     def init_health_checkers(self, collection_name=None):
         c_name = collection_name
@@ -130,5 +110,6 @@ class TestOperations(TestBase):
         ra.get_stage_success_rate()
         if is_check:
             assert_statistic(self.health_checkers)
-            assert_expectations()        
+            assert_expectations()
+        wait_pods_ready(self.milvus_ns, f"app.kubernetes.io/instance={self.release_name}")
         log.info("*********************Chaos Test Completed**********************")
