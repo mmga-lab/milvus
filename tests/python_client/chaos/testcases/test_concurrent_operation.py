@@ -106,11 +106,11 @@ class TestOperations(TestBase):
             for k, v in self.health_checkers.items():
                 v.check_result()
                 # log.info(v.check_result())
+        wait_pods_ready(self.milvus_ns, f"app.kubernetes.io/instance={self.release_name}")
+        time.sleep(60)
         ra = ResultAnalyzer()
         ra.get_stage_success_rate()
         if is_check:
             assert_statistic(self.health_checkers)
             assert_expectations()
-        wait_pods_ready(self.milvus_ns, f"app.kubernetes.io/instance={self.release_name}")
-        time.sleep(60)
         log.info("*********************Chaos Test Completed**********************")
