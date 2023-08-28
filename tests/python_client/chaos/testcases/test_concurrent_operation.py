@@ -1,4 +1,4 @@
-import threading
+import time
 import pytest
 import json
 from time import sleep
@@ -112,4 +112,5 @@ class TestOperations(TestBase):
             assert_statistic(self.health_checkers)
             assert_expectations()
         wait_pods_ready(self.milvus_ns, f"app.kubernetes.io/instance={self.release_name}")
+        time.sleep(60)
         log.info("*********************Chaos Test Completed**********************")
