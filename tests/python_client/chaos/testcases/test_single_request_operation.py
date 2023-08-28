@@ -19,6 +19,7 @@ from utils.util_log import test_log as log
 from utils.util_k8s import wait_pods_ready, get_milvus_instance_name
 from chaos import chaos_commons as cc
 from common.common_type import CaseLabel
+from common.milvus_sys import MilvusSys
 from chaos.chaos_commons import assert_statistic
 from chaos import constants
 from delayed_assert import assert_expectations
@@ -53,6 +54,7 @@ class TestOperations(TestBase):
         self.port = port
         self.user = user
         self.password = password
+        self.milvus_sys = MilvusSys(alias='default')
         self.milvus_ns = milvus_ns
         self.release_name = get_milvus_instance_name(self.milvus_ns, milvus_sys=self.milvus_sys)
 
