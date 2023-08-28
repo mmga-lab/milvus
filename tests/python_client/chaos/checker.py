@@ -1,3 +1,4 @@
+import pytest
 import unittest
 from enum import Enum
 from random import randint
@@ -331,10 +332,15 @@ class Checker:
         self._keep_running = False
         time.sleep(10)
 
+    def resume(self):
+        self._keep_running = True
+        time.sleep(10)
+
     def reset(self):
         self._succ = 0
         self._fail = 0
         self.rsp_times = []
+        self.fail_records = []
         self.average_time = 0
 
     def get_rto(self):
@@ -564,7 +570,7 @@ class InsertChecker(Checker):
         for r in res:
             d = r[f"{ct.default_int64_field_name}"]
             data_in_server.append(d)
-        assert set(data_in_server) == set(data_in_client)
+        pytest.assume(set(data_in_server) == set(data_in_client))
 
 
 class CreateChecker(Checker):
