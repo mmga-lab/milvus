@@ -96,13 +96,15 @@ class TestOperations(TestBase):
                 event_records.insert("init_chaos", "ready")
             for k, v in self.health_checkers.items():
                 v.check_result()
-        ra = ResultAnalyzer()
-        ra.get_stage_success_rate()
-        ra.show_result_table()
         if is_check:
             assert_statistic(self.health_checkers, succ_rate_threshold=0.98)
             assert_expectations()
         # wait all pod ready
         wait_pods_ready(self.milvus_ns, f"app.kubernetes.io/instance={self.release_name}")
         time.sleep(60)
+        for k, v in self.health_checkers.items():
+            v.pause()
+        ra = ResultAnalyzer()
+        ra.get_stage_success_rate()
+        ra.show_result_table()
         log.info("*********************Chaos Test Completed**********************")
