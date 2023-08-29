@@ -76,18 +76,31 @@ class RequestRecords(metaclass=Singleton):
 
     def __init__(self):
         self.file_name = f"/tmp/ci_logs/request_records_{uuid.uuid4()}.parquet"
-        self.buffer = {}
+        self.buffer = []
         self.created_file = False
 
     def insert(self, operation_name, collection_name, start_time, time_cost, result):
         data = {
-            "operation_name": [operation_name],
-            "collection_name": [collection_name],
-            "start_time": [start_time],
-            "time_cost": [time_cost],
-            "result": [result]
+            "operation_name": operation_name,
+            "collection_name": collection_name,
+            "start_time": start_time,
+            "time_cost": time_cost,
+            "result": result
         }
-        df = pd.DataFrame(data)
+        self.buffer.append(data)
+        if len(self.buffer) > 100:
+            df = pd.DataFrame(data)
+            if not self.created_file:
+                with lock:
+                    df.to_parquet(self.file_name, engine='fastparquet')
+                    self.created_file = True
+            else:
+                with lock:
+                    df.to_parquet(self.file_name, engine='fastparquet', append=True)
+            self.buffer = {}
+
+    def sink(self):
+        df = pd.DataFrame(self.buffer)
         if not self.created_file:
             with lock:
                 df.to_parquet(self.file_name, engine='fastparquet')
@@ -97,6 +110,7 @@ class RequestRecords(metaclass=Singleton):
                 df.to_parquet(self.file_name, engine='fastparquet', append=True)
 
     def get_records_df(self):
+        self.sink()
         df = pd.read_parquet(self.file_name)
         return df
 
@@ -215,7 +229,7 @@ def trace(fmt=DEFAULT_FMT, prefix='test', flag=True):
                     t0 = time.perf_counter()
                     request_records.insert(operation_name, collection_name, start_time, elapsed, str(result))
                     tt = time.perf_counter() - t0
-                    log.info(f"insert request record cost {tt}s")
+                    log.debug(f"insert request record cost {tt}s")
                 except Exception as e:
                     log.error(e)
                 log.info(log_str)
