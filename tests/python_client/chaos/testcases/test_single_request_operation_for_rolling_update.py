@@ -144,11 +144,6 @@ class TestOperations(TestBase):
                 rto = v.get_rto()
                 pytest.assume(rto < 30,  f"{k} rto expect 30s but get {rto}s")  # rto should be less than 30s
 
-            if Op.insert in self.health_checkers:
-                # verify the no insert data loss
-                log.info("*********************Verify Data Completeness**********************")
-                self.health_checkers[Op.insert].verify_data_completeness()
-
         #
         for k, v in self.health_checkers.items():
             v.reset()
@@ -160,6 +155,10 @@ class TestOperations(TestBase):
         label_selector = f"app.kubernetes.io/instance={meta_name}"
         is_ready = wait_pods_ready("chaos-testing", label_selector)
         pytest.assume(is_ready is True, f"expect all pods ready but got {is_ready}")
+        if Op.insert in self.health_checkers:
+            # verify the no insert data loss
+            log.info("*********************Verify Data Completeness**********************")
+            self.health_checkers[Op.insert].verify_data_completeness()
         cc.start_monitor_threads(self.health_checkers)
         sleep(60)
         log.info("check succ rate after rolling update finished")
