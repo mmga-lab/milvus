@@ -56,7 +56,7 @@ def trace(fmt=DEFAULT_FMT, prefix='test', flag=True):
                 log_str = f"[{prefix}]" + fmt.format(**locals())
                 # TODO: add report function in this place, like uploading to influxdb
                 # it is better a async way to do this, in case of blocking the request processing
-                log.info(log_str)
+                log.debug(log_str)
             if result:
                 self.rsp_times.append(elapsed)
                 self.average_time = (
@@ -401,8 +401,8 @@ class InsertChecker(Checker):
         for r in res:
             d = r[f"{ct.default_int64_field_name}"]
             data_in_server.append(d)
-        pytest.assume(set(data_in_server) == set(data_in_client), f"data_in_server:{len(set(data_in_server))}, "
-                                                                  f"data_in_client: {set(data_in_client)}")
+        diff = set(data_in_server) ^ set(data_in_client)
+        pytest.assume(set(data_in_server) == set(data_in_client), f"get diff {diff}")
 
 
 class CreateChecker(Checker):
