@@ -401,7 +401,8 @@ class InsertChecker(Checker):
         for r in res:
             d = r[f"{ct.default_int64_field_name}"]
             data_in_server.append(d)
-        pytest.assume(set(data_in_server) == set(data_in_client))
+        pytest.assume(set(data_in_server) == set(data_in_client), f"data_in_server:{len(set(data_in_server))}, "
+                                                                  f"data_in_client: {set(data_in_client)}")
 
 
 class CreateChecker(Checker):
