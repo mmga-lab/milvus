@@ -89,7 +89,7 @@ class RequestRecords(metaclass=Singleton):
         }
         self.buffer.append(data)
         if len(self.buffer) > 100:
-            df = pd.DataFrame(data)
+            df = pd.DataFrame(self.buffer)
             if not self.created_file:
                 with lock:
                     df.to_parquet(self.file_name, engine='fastparquet')
@@ -97,7 +97,7 @@ class RequestRecords(metaclass=Singleton):
             else:
                 with lock:
                     df.to_parquet(self.file_name, engine='fastparquet', append=True)
-            self.buffer = {}
+            self.buffer = []
 
     def sink(self):
         df = pd.DataFrame(self.buffer)
@@ -183,6 +183,7 @@ class ResultAnalyzer:
             row = [operation, values['before_chaos'], values['during_chaos'], values['after_chaos']]
             table.add_row(row)
         log.info(f"succ rate for operations in different stage\n{table}")
+
 
 
 class Op(Enum):
