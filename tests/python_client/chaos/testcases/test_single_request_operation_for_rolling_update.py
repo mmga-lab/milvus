@@ -38,6 +38,23 @@ class TestBase:
     health_checkers = {}
 
 
+def init_health_checkers(collection_name=None):
+    c_name = collection_name
+    schema = cf.gen_default_collection_schema(auto_id=False)
+
+    checkers = {
+        Op.create: CreateChecker(collection_name=None, schema=schema),
+        Op.insert: InsertChecker(collection_name=c_name, schema=schema),
+        Op.flush: FlushChecker(collection_name=c_name, schema=schema),
+        Op.index: IndexChecker(collection_name=None, schema=schema),
+        Op.search: SearchChecker(collection_name=c_name, schema=schema),
+        Op.query: QueryChecker(collection_name=c_name, schema=schema),
+        Op.delete: DeleteChecker(collection_name=c_name, schema=schema),
+        Op.drop: DropChecker(collection_name=None, schema=schema)
+    }
+    return checkers
+
+
 class TestOperations(TestBase):
 
     @pytest.fixture(scope="function", autouse=True)
@@ -56,29 +73,13 @@ class TestOperations(TestBase):
         self.password = password
         self.minio_endpoint = f"{minio_host}:9000"
 
-    def init_health_checkers(self, collection_name=None):
-        c_name = collection_name
-        schema = cf.gen_default_collection_schema(auto_id=False)
-
-        checkers = {
-            Op.create: CreateChecker(collection_name=None, schema=schema),
-            Op.insert: InsertChecker(collection_name=c_name, schema=schema),
-            Op.flush: FlushChecker(collection_name=c_name, schema=schema),
-            Op.index: IndexChecker(collection_name=None, schema=schema),
-            Op.search: SearchChecker(collection_name=c_name, schema=schema),
-            Op.query: QueryChecker(collection_name=c_name, schema=schema),
-            Op.delete: DeleteChecker(collection_name=c_name, schema=schema),
-            Op.drop: DropChecker(collection_name=None, schema=schema)
-        }
-        self.health_checkers = checkers
-
     @pytest.mark.tags(CaseLabel.L3)
     def test_operations(self, request_duration, is_check):
         # start the monitor threads to check the milvus ops
         log.info("*********************Test Start**********************")
         log.info(connections.get_connection_addr('default'))
         c_name = None
-        self.init_health_checkers(collection_name=c_name)
+        self.health_checkers = init_health_checkers(collection_name=c_name)
         # prepare data by bulk insert
         log.info("*********************Prepare Data by bulk insert**********************")
         for k, v in self.health_checkers.items():
@@ -123,6 +124,10 @@ class TestOperations(TestBase):
                 res = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
                 stdout, stderr = res.communicate()
                 log.info(f"{cmd}, stdout: {stdout}, stderr: {stderr}")
+                # init another health checker during update
+                rolling_update_checker = init_health_checkers(collection_name=c_name)
+                cc.start_monitor_threads(rolling_update_checker)
+
                 # reset all
                 for k, v in self.health_checkers.items():
                     v.reset()
