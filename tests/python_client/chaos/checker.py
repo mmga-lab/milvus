@@ -20,7 +20,7 @@ from common import common_func as cf
 from common import common_type as ct
 from common.milvus_sys import MilvusSys
 from chaos import constants
-
+from pymilvus import Collection
 from common.common_type import CheckTasks
 from utils.util_log import test_log as log
 from utils.api_request import Error
@@ -577,16 +577,25 @@ class PartitionReleaseChecker(Checker):
 class SearchChecker(Checker):
     """check search operations in a dependent thread"""
 
-    def __init__(self, collection_name=None, shards_num=2, replica_number=1, schema=None, ):
+    def __init__(self, collection_name=None, shards_num=4, replica_number=1, schema=None, ):
         if collection_name is None:
             collection_name = cf.gen_unique_str("SearchChecker_")
         super().__init__(collection_name=collection_name, shards_num=shards_num, schema=schema)
-        self.c_wrap.create_index(self.float_vector_field_name,
-                                 constants.DEFAULT_INDEX_PARAM,
-                                 index_name=cf.gen_unique_str('index_'),
-                                 timeout=timeout,
-                                 enable_traceback=enable_traceback,
-                                 check_task=CheckTasks.check_nothing)
+        # insert more data for search
+        for _ in range(0, constants.ENTITIES_FOR_SEARCH_BATCH):
+            self.c_wrap.insert(
+                data=cf.get_column_data_by_schema(nb=constants.ENTITIES_FOR_SEARCH_PER_BATCH, schema=schema, start=0),
+                timeout=timeout,
+                enable_traceback=enable_traceback)
+        try:
+            self.c_wrap.create_index(self.float_vector_field_name,
+                                    constants.DEFAULT_INDEX_PARAM,
+                                    index_name=cf.gen_unique_str('index_'),
+                                    timeout=timeout,
+                                    enable_traceback=enable_traceback,
+                                    check_task=CheckTasks.check_nothing)
+        except Exception as e:
+            log.info(f"create index failed with error {e}")
         # do load before search
         self.c_wrap.load(replica_number=replica_number)
         self.insert_data()
@@ -1084,13 +1093,21 @@ class QueryChecker(Checker):
         if collection_name is None:
             collection_name = cf.gen_unique_str("QueryChecker_")
         super().__init__(collection_name=collection_name, shards_num=shards_num, schema=schema)
-        res, result = self.c_wrap.create_index(self.float_vector_field_name,
-                                               constants.DEFAULT_INDEX_PARAM,
-                                               index_name=cf.gen_unique_str(
-                                                   'index_'),
-                                               timeout=timeout,
-                                               enable_traceback=enable_traceback,
-                                               check_task=CheckTasks.check_nothing)
+        for i in range(0, constants.ENTITIES_FOR_SEARCH_BATCH):
+            self.c_wrap.insert(
+                data=cf.get_column_data_by_schema(nb=constants.ENTITIES_FOR_SEARCH_PER_BATCH, schema=schema, start=0),
+                timeout=timeout,
+                enable_traceback=enable_traceback)
+        try:
+            res, result = self.c_wrap.create_index(self.float_vector_field_name,
+                                                constants.DEFAULT_INDEX_PARAM,
+                                                index_name=cf.gen_unique_str(
+                                                    'index_'),
+                                                timeout=timeout,
+                                                enable_traceback=enable_traceback,
+                                                check_task=CheckTasks.check_nothing)
+        except Exception as e:
+            log.info(f"create index failed with error {e}")
         self.c_wrap.load(replica_number=replica_number)  # do load before query
         self.insert_data()
         self.term_expr = None

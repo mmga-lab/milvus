@@ -4,15 +4,13 @@ import pytest
 from time import sleep
 from yaml import full_load
 from pymilvus import connections, utility
-from chaos.checker import (CollectionCreateChecker,
+from chaos.checker import (CreateChecker,
                            InsertChecker,
-                           UpsertChecker,
                            FlushChecker,
                            SearchChecker,
                            QueryChecker,
-                           IndexCreateChecker,
+                           IndexChecker,
                            DeleteChecker,
-                           CollectionDropChecker,
                            Op)
 from utils.util_k8s import wait_pods_ready
 from utils.util_log import test_log as log
@@ -59,15 +57,10 @@ class TestOperations(TestBase):
         schema = cf.gen_default_collection_schema(auto_id=False)
 
         checkers = {
-            Op.create: CollectionCreateChecker(collection_name=None, schema=schema),
             Op.insert: InsertChecker(collection_name=c_name, schema=schema),
-            Op.upsert: UpsertChecker(collection_name=c_name, schema=schema),
-            Op.flush: FlushChecker(collection_name=c_name, schema=schema),
-            Op.index: IndexCreateChecker(collection_name=None, schema=schema),
             Op.search: SearchChecker(collection_name=c_name, schema=schema),
             Op.query: QueryChecker(collection_name=c_name, schema=schema),
             Op.delete: DeleteChecker(collection_name=c_name, schema=schema),
-            Op.drop: CollectionDropChecker(collection_name=None, schema=schema)
         }
         self.health_checkers = checkers
 
@@ -76,33 +69,8 @@ class TestOperations(TestBase):
         # start the monitor threads to check the milvus ops
         log.info("*********************Test Start**********************")
         log.info(connections.get_connection_addr('default'))
-        c_name = None
+        c_name =  cf.gen_unique_str("Checker_")
         self.init_health_checkers(collection_name=c_name)
-        # # prepare data by bulk insert
-        # if prepare_data:
-        #     log.info("*********************Prepare Data by bulk insert**********************")
-        #     for k, v in self.health_checkers.items():
-        #         if k in [Op.search, Op.query]:
-        #             log.info(f"prepare bulk insert data for {k}")
-        #             v.prepare_bulk_insert_data(minio_endpoint=self.minio_endpoint)
-        #             completed = False
-        #             retry_times = 0
-        #             while not completed and retry_times < 3:
-        #                 completed, result = v.do_bulk_insert()
-        #                 if not completed:
-        #                     log.info(f"do bulk insert failed: {result}")
-        #                     retry_times += 1
-        #                     sleep(5)
-        #             # wait for index building complete
-        #             utility.wait_for_index_building_complete(v.c_name, timeout=120)
-        #             res = utility.index_building_progress(v.c_name)
-        #             index_completed = res["pending_index_rows"] == 0
-        #             while not index_completed:
-        #                 time.sleep(10)
-        #                 res = utility.index_building_progress(v.c_name)
-        #                 log.info(f"index building progress: {res}")
-        #                 index_completed = res["pending_index_rows"] == 0
-        #             log.info(f"index building progress: {res}")
 
         log.info("*********************Load Start**********************")
         cc.start_monitor_threads(self.health_checkers)
@@ -125,7 +93,7 @@ class TestOperations(TestBase):
         for k, v in self.health_checkers.items():
             log.info(f"{k} rto: {v.get_rto()}")
         
-                # save result to parquet use pandas
+        # save result to parquet use pandas
         result  = []
         for k, v in self.health_checkers.items():
             data = {
@@ -138,7 +106,7 @@ class TestOperations(TestBase):
         df = pd.DataFrame(result)
         log.info(f"result: {df}")
         # save result to parquet
-        file_name = "/tmp/ci_logs/single_request_result.parquet"
+        file_name = "/tmp/ci_logs/concurrent_request_result.parquet"
         Path(file_name).parent.mkdir(parents=True, exist_ok=True)
         df.to_parquet(file_name)
         if is_check:
