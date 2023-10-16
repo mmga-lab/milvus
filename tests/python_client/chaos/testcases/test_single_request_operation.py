@@ -97,7 +97,7 @@ class TestOperations(TestBase):
             for k, v in self.health_checkers.items():
                 v.check_result()
         if is_check:
-            assert_statistic(self.health_checkers, succ_rate_threshold=0.98)
+            assert_statistic(self.health_checkers, succ_rate_threshold=1.0)
             assert_expectations()
         # wait all pod ready
         wait_pods_ready(self.milvus_ns, f"app.kubernetes.io/instance={self.release_name}")
