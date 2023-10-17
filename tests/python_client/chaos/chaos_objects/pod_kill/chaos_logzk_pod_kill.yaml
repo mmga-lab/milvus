@@ -15,7 +15,7 @@ spec:
         - chaos-testing
       labelSelectors:
         app.kubernetes.io/instance: milvus-chaos-log
-        app.kubernetes.io/name: zookeeper
+        app.kubernetes.io/component: zookeeper
     mode: fixed
     value: "1"
     action: pod-kill
