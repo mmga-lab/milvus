@@ -9,7 +9,7 @@ spec:
       - chaos-testing
     labelSelectors:
       app.kubernetes.io/instance: milvus-chaos-log
-      app.kubernetes.io/name: proxy
+      app.kubernetes.io/component: proxy
   mode: fixed
   value: "1"
   action: pod-failure
