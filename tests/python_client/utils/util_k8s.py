@@ -20,7 +20,6 @@ def init_k8s_client_config():
         config.load_incluster_config()
     except Exception as e:
         config.load_kube_config()
-        raise Exception(e)
 
 
 def get_current_namespace():
