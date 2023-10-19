@@ -17,13 +17,9 @@ def init_k8s_client_config():
     init kubernetes client config
     """
     try:
-        in_cluster = os.getenv(in_cluster_env, default='False')
-        # log.debug(f"env variable IN_CLUSTER: {in_cluster}")
-        if in_cluster.lower() == 'true':
-            config.load_incluster_config()
-        else:
-            config.load_kube_config()
+        config.load_incluster_config()
     except Exception as e:
+        config.load_kube_config()
         raise Exception(e)
 
 
