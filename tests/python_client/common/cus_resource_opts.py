@@ -23,12 +23,12 @@ class CustomResourceOperations(object):
             self.plural = kind.lower()
 
         # init k8s client config
-        in_cluster = os.getenv(in_cluster_env, default='False')
-        log.debug(f"env variable IN_CLUSTER: {in_cluster}")
-        if in_cluster.lower() == 'true':
+        try:
             config.load_incluster_config()
-        else:
+        except Exception as e:
+            log.error(f"load in cluster config failed: {str(e)}")     
             config.load_kube_config()
+
 
     def create(self, body):
         """create or apply a custom resource in k8s"""
