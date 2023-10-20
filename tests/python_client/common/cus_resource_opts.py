@@ -26,8 +26,7 @@ class CustomResourceOperations(object):
         try:
             config.load_kube_config()
         except Exception as e:
-            log.error(f"load in cluster config failed: {str(e)}")
-            config.load_incluster_config()     
+            config.load_incluster_config()
             
 
 
