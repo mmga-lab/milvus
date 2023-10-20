@@ -106,6 +106,7 @@ class TestChaosApply:
         res = chaos_res.get(meta_name)
         log.info(f"chaos inject result: {res['kind']}, {res['metadata']['name']}")
         sleep(chaos_duration)
+        chaos_res.get_event(meta_name)
         # delete chaos
         chaos_res.delete(meta_name)
         delete_time = datetime.fromtimestamp(time.time()).strftime('%Y-%m-%d %H:%M:%S.%f')

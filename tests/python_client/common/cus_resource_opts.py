@@ -17,6 +17,7 @@ class CustomResourceOperations(object):
         self.group = group
         self.version = version
         self.namespace = namespace
+        self.kind = kind
         if kind.lower()[-1] != "s":
             self.plural = kind.lower() + "s"
         else:
@@ -104,3 +105,14 @@ class CustomResourceOperations(object):
             for item in cus_objects["items"]:
                 metadata_name = item["metadata"]["name"]
                 self.delete(metadata_name)
+
+    def get_event(self, metadata_name):
+        """watch the events of customer resources in k8s"""
+        v1 = client.CoreV1Api()
+        events = v1.list_namespaced_event(namespace=self.namespace)
+        crd_events = [event for event in events.items if
+                      event.involved_object.kind == self.kind and event.involved_object.name == metadata_name]
+        for event in crd_events:
+            log.info(f"Event: {event.reason}, Message: {event.message}, Time: {event.last_timestamp}")
+
+        return crd_events
