@@ -17,9 +17,9 @@ def init_k8s_client_config():
     init kubernetes client config
     """
     try:
-        config.load_incluster_config()
-    except Exception as e:
         config.load_kube_config()
+    except Exception as e:
+        config.load_incluster_config()
 
 
 def get_current_namespace():

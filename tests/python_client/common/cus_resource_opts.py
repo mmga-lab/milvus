@@ -24,10 +24,11 @@ class CustomResourceOperations(object):
 
         # init k8s client config
         try:
-            config.load_incluster_config()
-        except Exception as e:
-            log.error(f"load in cluster config failed: {str(e)}")     
             config.load_kube_config()
+        except Exception as e:
+            log.error(f"load in cluster config failed: {str(e)}")
+            config.load_incluster_config()     
+            
 
 
     def create(self, body):
