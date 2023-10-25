@@ -1,17 +1,15 @@
 
 tikv:
-  tikv:
-    nodeSelector:
-      node-role/tikv: "true"
-    tolerations:
-    - effect: NoSchedule
-      key: node-role/tikv
-      operator: Exists
+  nodeSelector:
+    node-role/tikv: "true"
+  tolerations:
+  - effect: NoSchedule
+    key: node-role/tikv
+    operator: Exists
 logstore:
-  bookie:
-    nodeSelector:
-      node-role/logstore: "true"
-    tolerations:
-    - effect: NoSchedule
-      key: node-role/logstore
-      operator: Exists
+  nodeSelector:
+    node-role/logstore: "true"
+  tolerations:
+  - effect: NoSchedule
+    key: node-role/logstore
+    operator: Exists
