@@ -517,7 +517,7 @@ class FlushChecker(Checker):
     def keep_running(self):
         while self._keep_running:
             self.run_task()
-            sleep(constants.WAIT_PER_OP / 10)
+            sleep(constants.WAIT_PER_OP * 6)
 
 
 class InsertChecker(Checker):
@@ -623,7 +623,7 @@ class CreateChecker(Checker):
     def keep_running(self):
         while self._keep_running:
             self.run_task()
-            sleep(constants.WAIT_PER_OP / 10)
+            sleep(constants.WAIT_PER_OP)
 
 
 class IndexChecker(Checker):
@@ -660,7 +660,7 @@ class IndexChecker(Checker):
     def keep_running(self):
         while self._keep_running:
             self.run_task()
-            sleep(constants.WAIT_PER_OP / 10)
+            sleep(constants.WAIT_PER_OP * 6)
 
 
 class QueryChecker(Checker):
