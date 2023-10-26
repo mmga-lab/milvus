@@ -1,0 +1,13 @@
+
+externalTikv:
+  enabled: true
+  ## the endpoints of the external etcd
+  ##
+  endpoints:
+    - 10.255.214.195:2379
+  rootPath: by-dev
+
+externalLogstore:
+  enabled: true
+  addr: 10.255.179.37:9999
+  namespace: default
