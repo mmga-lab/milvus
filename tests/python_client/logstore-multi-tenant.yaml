@@ -1,4 +1,13 @@
 
+standalone:
+  resource:
+    requests:
+      cpu: 4
+      memory: 16Gi
+    limits:
+      cpu: 4
+      memory: 16Gi
+
 externalTikv:
   enabled: true
   ## the endpoints of the external etcd
