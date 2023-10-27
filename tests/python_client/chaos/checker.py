@@ -285,7 +285,7 @@ class Checker:
        b. count operations and success rate
     """
 
-    def __init__(self, collection_name=None, shards_num=2, dim=ct.default_dim, insert_data=True, schema=None):
+    def __init__(self, collection_name=None, shards_num=1, dim=768, insert_data=True, schema=None):
         self.recovery_time = 0
         self._succ = 0
         self._fail = 0
@@ -321,6 +321,17 @@ class Checker:
             log.info(f"insert data for collection {c_name} cost {time.perf_counter() - t0}s")
 
         self.initial_entities = self.c_wrap.num_entities  # do as a flush
+
+    def insert_data(self, num_entities=300000):
+        batch_size = 50000
+        nb = batch_size if num_entities > batch_size else num_entities
+        for i in range(num_entities // batch_size):
+            t0 = time.perf_counter()
+            self.c_wrap.insert(data=cf.get_column_data_by_schema(nb=nb, schema=self.schema, start=i * batch_size),
+                            timeout=timeout,
+                            enable_traceback=enable_traceback)
+            tt = time.perf_counter() - t0
+            log.info(f"insert {nb} entities for collection {self.c_name} cost {tt}s")
 
     def total(self):
         return self._succ + self._fail
@@ -407,7 +418,7 @@ class Checker:
 class SearchChecker(Checker):
     """check search operations in a dependent thread"""
 
-    def __init__(self, collection_name=None, shards_num=2, replica_number=1, schema=None, ):
+    def __init__(self, collection_name=None, shards_num=1, replica_number=1, schema=None, ):
         if collection_name is None:
             collection_name = cf.gen_unique_str("SearchChecker_")
         super().__init__(collection_name=collection_name, shards_num=shards_num, schema=schema)
@@ -446,7 +457,7 @@ class SearchChecker(Checker):
 class InsertFlushChecker(Checker):
     """check Insert and flush operations in a dependent thread"""
 
-    def __init__(self, collection_name=None, flush=False, shards_num=2, schema=None):
+    def __init__(self, collection_name=None, flush=False, shards_num=1, schema=None):
         super().__init__(collection_name=collection_name, shards_num=shards_num, schema=schema)
         self._flush = flush
         self.initial_entities = self.c_wrap.num_entities
@@ -488,7 +499,7 @@ class InsertFlushChecker(Checker):
 class FlushChecker(Checker):
     """check flush operations in a dependent thread"""
 
-    def __init__(self, collection_name=None, shards_num=2, schema=None):
+    def __init__(self, collection_name=None, shards_num=1, schema=None):
         if collection_name is None:
             collection_name = cf.gen_unique_str("FlushChecker_")
         super().__init__(collection_name=collection_name, shards_num=shards_num, schema=schema)
@@ -523,7 +534,7 @@ class FlushChecker(Checker):
 class InsertChecker(Checker):
     """check flush operations in a dependent thread"""
 
-    def __init__(self, collection_name=None, flush=False, shards_num=2, schema=None):
+    def __init__(self, collection_name=None, flush=False, shards_num=1, schema=None):
         if collection_name is None:
             collection_name = cf.gen_unique_str("InsertChecker_")
         super().__init__(collection_name=collection_name, shards_num=shards_num, schema=schema)
@@ -666,7 +677,7 @@ class IndexChecker(Checker):
 class QueryChecker(Checker):
     """check query operations in a dependent thread"""
 
-    def __init__(self, collection_name=None, shards_num=2, replica_number=1, schema=None):
+    def __init__(self, collection_name=None, shards_num=1, replica_number=1, schema=None):
         if collection_name is None:
             collection_name = cf.gen_unique_str("QueryChecker_")
         super().__init__(collection_name=collection_name, shards_num=shards_num, schema=schema)

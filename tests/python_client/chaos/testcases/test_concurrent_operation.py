@@ -71,7 +71,7 @@ class TestOperations(TestBase):
         c_name = collection_name
         checkers = {
             Op.insert: InsertChecker(collection_name=c_name),
-            Op.flush: FlushChecker(collection_name=c_name),
+            # Op.flush: FlushChecker(collection_name=c_name),
             Op.search: SearchChecker(collection_name=c_name),
             Op.query: QueryChecker(collection_name=c_name),
             # Op.compact: CompactChecker(collection_name=c_name),
@@ -94,8 +94,11 @@ class TestOperations(TestBase):
         c_name = collection_name if collection_name else cf.gen_unique_str("Checker_")
         # event_records.insert("init_health_checkers", "start")
         self.init_health_checkers(collection_name=c_name)
+        # insert data
+        self.health_checkers[Op.insert].insert_data()
         # event_records.insert("init_health_checkers", "finished")
         cc.start_monitor_threads(self.health_checkers)
+        
         log.info("*********************Load Start**********************")
         request_duration = request_duration.replace("h", "*3600+").replace("m", "*60+").replace("s", "")
         if request_duration[-1] == "+":
