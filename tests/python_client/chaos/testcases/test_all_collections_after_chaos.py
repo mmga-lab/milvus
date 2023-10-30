@@ -7,7 +7,7 @@ from common import common_type as ct
 from common.common_type import CaseLabel
 from utils.util_log import test_log as log
 from utils.util_common import get_collections
-
+from chaos import constants
 
 class TestAllCollection(TestcaseBase):
     """ Test case of end to end"""
@@ -72,7 +72,7 @@ class TestAllCollection(TestcaseBase):
 
         # create index if not have
         index_infos = [index.to_dict() for index in collection_w.indexes]
-        index_params = {"index_type": "HNSW", "metric_type": "L2", "params": {"M": 48, "efConstruction": 500}}
+        index_params = constants.DEFAULT_INDEX_PARAM
         if len(index_infos) == 0:
             log.info(f"collection {name} does not have index, create index for it")
             t0 = time.time()
@@ -91,7 +91,7 @@ class TestAllCollection(TestcaseBase):
 
         # search
         search_vectors = cf.gen_vectors(1, dim)
-        search_params = {"metric_type": "L2", "params": {"ef": 64}}
+        search_params = constants.DEFAULT_SEARCH_PARAM
         t0 = time.time()
         res_1, _ = collection_w.search(data=search_vectors,
                                        anns_field=float_vector_field_name,
