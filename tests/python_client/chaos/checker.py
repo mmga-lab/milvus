@@ -437,7 +437,7 @@ class SearchChecker(Checker):
             data=cf.gen_vectors(5, self.dim),
             anns_field=self.float_vector_field_name,
             param=constants.DEFAULT_SEARCH_PARAM,
-            limit=1,
+            limit=100,
             timeout=search_timeout,
             check_task=CheckTasks.check_nothing
         )
@@ -700,7 +700,7 @@ class QueryChecker(Checker):
     @exception_handler()
     def run_task(self):
         int_values = []
-        for _ in range(5):
+        for _ in range(100):
             int_values.append(randint(0, constants.ENTITIES_FOR_SEARCH))
         self.term_expr = f'{self.int64_field_name} in {int_values}'
         res, result = self.query()
