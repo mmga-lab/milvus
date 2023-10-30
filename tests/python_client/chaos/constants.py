@@ -22,5 +22,5 @@ RELEASE_NAME = 'test-allstandalone-pod-kill-19-25-26'
 WAIT_PER_OP = 10  # time to wait in seconds between operations
 CHAOS_DURATION = 120  # chaos duration time in seconds
 DEFAULT_INDEX_PARAM = {"index_type": "DISKANN", "metric_type": "COSINE", "params": {}}
-DEFAULT_SEARCH_PARAM = {"metric_type": "COSINE", "params": {"search_list": 30}}
+DEFAULT_SEARCH_PARAM = {"metric_type": "COSINE", "params": {"search_list": 150}}
 CHAOS_INFO_SAVE_PATH = "/tmp/ci_logs/chaos_info.json"
