@@ -323,7 +323,7 @@ class Checker:
         self.initial_entities = self.c_wrap.num_entities  # do as a flush
 
     def insert_data(self, num_entities=50000):
-        batch_size = 10000
+        batch_size = 20000
         nb = batch_size if num_entities > batch_size else num_entities
         for i in range(num_entities // batch_size):
             t0 = time.perf_counter()
@@ -350,7 +350,7 @@ class Checker:
         checker_name = self.__class__.__name__
         checkers_result = f"{checker_name}, succ_rate: {succ_rate:.2f}, total: {total:03d}, average_time: {average_time:.4f}, max_time: {max_time:.4f}, min_time: {min_time:.4f}"
         log.info(checkers_result)
-        log.info(f"{checker_name} rsp times: {self.rsp_times}")
+        log.debug(f"{checker_name} rsp times: {self.rsp_times}")
         if len(self.fail_records) > 0:
             log.info(f"{checker_name} failed at {self.fail_records}")
         return checkers_result

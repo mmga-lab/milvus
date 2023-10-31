@@ -113,7 +113,8 @@ class TestOperations(TestBase):
         time.sleep(60)
         ra = ResultAnalyzer()
         ra.get_stage_success_rate()
+        ra.show_result_table()
         if is_check:
-            assert_statistic(self.health_checkers)
+            assert_statistic(self.health_checkers, succ_rate_threshold=1.0)
             assert_expectations()
         log.info("*********************Chaos Test Completed**********************")
