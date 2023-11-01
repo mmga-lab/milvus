@@ -95,7 +95,11 @@ class TestOperations(TestBase):
         # event_records.insert("init_health_checkers", "start")
         self.init_health_checkers(collection_name=c_name)
         # insert data
-        self.health_checkers[Op.insert].insert_data(num_entities=400000)
+        try:
+            self.health_checkers[Op.insert].insert_data(num_entities=400000)
+        except Exception as e:
+            # in this place, may deny to insert data
+            log.error(f"insert data error: {e}")
         # event_records.insert("init_health_checkers", "finished")
         cc.start_monitor_threads(self.health_checkers)
         
