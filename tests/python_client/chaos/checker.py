@@ -322,7 +322,7 @@ class Checker:
 
         self.initial_entities = self.c_wrap.num_entities  # do as a flush
 
-    def insert_data(self, num_entities=50000):
+    def insert_data(self, num_entities=400000):
         batch_size = 20000
         nb = batch_size if num_entities > batch_size else num_entities
         for i in range(num_entities // batch_size):
