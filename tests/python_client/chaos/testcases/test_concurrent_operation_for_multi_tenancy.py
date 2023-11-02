@@ -98,6 +98,7 @@ class TestOperations(TestBase):
         try:
             self.health_checkers[Op.insert].insert_data(num_entities=400000)
         except Exception as e:
+            pytest.assume(False, f"collection {c_name} insert data error: {e}")
             # in this place, may deny to insert data
             log.error(f"insert data error: {e}")
         # event_records.insert("init_health_checkers", "finished")

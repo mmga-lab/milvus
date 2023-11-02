@@ -111,17 +111,17 @@ def assert_statistic(
         average_time = checkers[k].average_time
         if expectations.get(k, "") == constants.FAIL:
             log.info(
-                f"Expect Fail: {str(k)} succ rate {succ_rate}, total: {total}, average time: {average_time:.4f}"
+                f"collection name {checkers[k].c_name}, Expect Fail: {str(k)} succ rate {succ_rate}, total: {total}, average time: {average_time:.4f}"
             )
             pytest.assume(
                 succ_rate < fail_rate_threshold or total < 2,
-                f"Expect Fail: {str(k)} succ rate {succ_rate}, total: {total}, average time: {average_time:.4f}",
+                f"collection name {checkers[k].c_name}, Expect Fail: {str(k)} succ rate {succ_rate}, total: {total}, average time: {average_time:.4f}",
             )
         else:
             log.info(
-                f"Expect Succ: {str(k)} succ rate {succ_rate}, total: {total}, average time: {average_time:.4f}"
+                f"collection name {checkers[k].c_name}, Expect Succ: {str(k)} succ rate {succ_rate}, total: {total}, average time: {average_time:.4f}"
             )
             pytest.assume(
                 succ_rate >= succ_rate_threshold and total > 2,
-                f"Expect Succ: {str(k)} succ rate {succ_rate}, total: {total}, average time: {average_time:.4f}",
+                f"collection name {checkers[k].c_name}, Expect Succ: {str(k)} succ rate {succ_rate}, total: {total}, average time: {average_time:.4f}",
             )
