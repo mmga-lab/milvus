@@ -429,7 +429,8 @@ class SearchChecker(Checker):
                                  enable_traceback=enable_traceback,
                                  check_task=CheckTasks.check_nothing)
         # do load before search
-        self.c_wrap.load(replica_number=replica_number)
+        res, result = self.c_wrap.load(replica_number=replica_number)
+        assert result, f"load failed for collection {self.c_wrap.c_name}"
 
     @trace()
     def search(self):
@@ -688,7 +689,8 @@ class QueryChecker(Checker):
                                                timeout=timeout,
                                                enable_traceback=enable_traceback,
                                                check_task=CheckTasks.check_nothing)
-        self.c_wrap.load(replica_number=replica_number)  # do load before query
+        res, result = self.c_wrap.load(replica_number=replica_number)  # do load before query
+        assert result, f"load failed for collection {self.c_wrap.c_name}"
         self.term_expr = None
 
     @trace()
