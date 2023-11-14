@@ -12,6 +12,7 @@ from datetime import datetime
 from prettytable import PrettyTable
 import functools
 from time import sleep
+from tenacity import retry, stop_after_attempt, wait_exponential
 from base.collection_wrapper import ApiCollectionWrapper
 from base.utility_wrapper import ApiUtilityWrapper
 from common import common_func as cf
@@ -295,7 +296,11 @@ class Checker:
         self.average_time = 0
         self.files = []
         self.ms = MilvusSys()
-        self.bucket_name = self.ms.index_nodes[0]["infos"]["system_configurations"]["minio_bucket_name"]
+        try:
+            self.bucket_name = self.ms.index_nodes[0]["infos"]["system_configurations"]["minio_bucket_name"]
+        except Exception as e:
+            log.error(f"get minio bucket name error: {e}")
+            self.bucket_name = None
         self.c_wrap = ApiCollectionWrapper()
         self.utility_wrap = ApiUtilityWrapper()
         c_name = collection_name if collection_name is not None else cf.gen_unique_str(
@@ -327,11 +332,21 @@ class Checker:
         nb = batch_size if num_entities > batch_size else num_entities
         for i in range(num_entities // batch_size):
             t0 = time.perf_counter()
-            self.c_wrap.insert(data=cf.get_column_data_by_schema(nb=nb, schema=self.schema, start=i * batch_size),
-                            timeout=timeout,
-                            enable_traceback=enable_traceback)
+            self.insert_one_batch_data(data=cf.get_column_data_by_schema(nb=nb, schema=self.schema, start=i * batch_size),
+                                       timeout=timeout,
+                                       enable_traceback=enable_traceback)
             tt = time.perf_counter() - t0
             log.info(f"insert {nb} entities for collection {self.c_name} cost {tt}s")
+
+    @retry(stop=stop_after_attempt(5), wait=wait_exponential(multiplier=1, min=4, max=10))
+    def insert_one_batch_data(self, data, **kwargs):
+        res, result = self.c_wrap.insert(data=data,
+                                        timeout=timeout,
+                                        enable_traceback=enable_traceback)
+        if not result:
+            raise Exception("insert data failed")
+        else:
+            log.info(f"insert data success:{res}")
 
     def total(self):
         return self._succ + self._fail

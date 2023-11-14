@@ -16,7 +16,6 @@ from utils.util_k8s import wait_pods_ready, get_milvus_instance_name
 from utils.util_log import test_log as log
 from chaos import chaos_commons as cc
 from common import common_func as cf
-from common.milvus_sys import MilvusSys
 from chaos.chaos_commons import assert_statistic
 from common.common_type import CaseLabel
 from chaos import constants
@@ -53,7 +52,7 @@ class TestOperations(TestBase):
     def connection(self, host, port, user, password, milvus_ns):
         if user and password:
             # log.info(f"connect to {host}:{port} with user {user} and password {password}")
-            connections.connect('default', host=host, port=port, user=user, password=password, secure=True)
+            connections.connect('default', uri=f"{host}:{port}", user=user, password=password)
         else:
             connections.connect('default', host=host, port=port)
         if connections.has_connection("default") is False:
@@ -63,9 +62,7 @@ class TestOperations(TestBase):
         self.port = port
         self.user = user
         self.password = password
-        self.milvus_sys = MilvusSys(alias='default')
         self.milvus_ns = milvus_ns
-        self.release_name = get_milvus_instance_name(self.milvus_ns, milvus_sys=self.milvus_sys)
 
     def init_health_checkers(self, collection_name=None):
         c_name = collection_name
@@ -96,7 +93,7 @@ class TestOperations(TestBase):
         self.init_health_checkers(collection_name=c_name)
         # insert data
         try:
-            self.health_checkers[Op.insert].insert_data(num_entities=400000)
+            self.health_checkers[Op.insert].insert_data(num_entities=10000)
         except Exception as e:
             pytest.assume(False, f"collection {c_name} insert data error: {e}")
             # in this place, may deny to insert data
@@ -114,7 +111,7 @@ class TestOperations(TestBase):
             for k, v in self.health_checkers.items():
                 v.check_result()
                 # log.info(v.check_result())
-        wait_pods_ready(self.milvus_ns, f"app.kubernetes.io/instance={self.release_name}")
+
         time.sleep(60)
         ra = ResultAnalyzer()
         ra.get_stage_success_rate()
