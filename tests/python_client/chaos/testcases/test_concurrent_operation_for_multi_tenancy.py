@@ -93,7 +93,7 @@ class TestOperations(TestBase):
         self.init_health_checkers(collection_name=c_name)
         # insert data
         try:
-            self.health_checkers[Op.insert].insert_data(num_entities=10000)
+            self.health_checkers[Op.insert].insert_data(num_entities=400000)
         except Exception as e:
             pytest.assume(False, f"collection {c_name} insert data error: {e}")
             # in this place, may deny to insert data
