@@ -318,11 +318,11 @@ class Checker:
                                     enable_traceback=enable_traceback)
         if insert_data:
             log.info(f"collection {c_name} created, start to insert data")
+            data=cf.get_column_data_by_schema(nb=constants.ENTITIES_FOR_SEARCH, schema=schema, start=0)
             t0 = time.perf_counter()
-            self.c_wrap.insert(
-                data=cf.get_column_data_by_schema(nb=constants.ENTITIES_FOR_SEARCH, schema=schema, start=0),
-                timeout=timeout,
-                enable_traceback=enable_traceback)
+            self.insert_one_batch_data(data=data,
+                                       timeout=timeout,
+                                       enable_traceback=enable_traceback)            
             log.info(f"insert data for collection {c_name} cost {time.perf_counter() - t0}s")
 
         self.initial_entities = self.c_wrap.num_entities  # do as a flush
