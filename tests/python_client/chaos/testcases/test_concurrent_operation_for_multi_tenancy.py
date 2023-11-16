@@ -5,7 +5,7 @@ from time import sleep
 from pymilvus import connections
 from chaos.checker import (InsertChecker,
                            FlushChecker,
-                           CompactChecker, 
+                           CompactChecker,
                            SearchChecker,
                            QueryChecker,
                            DeleteChecker,
@@ -75,6 +75,7 @@ class TestOperations(TestBase):
             Op.delete: DeleteChecker(collection_name=c_name),
         }
         self.health_checkers = checkers
+        return checkers
 
     @pytest.fixture(scope="function", params=get_all_collections())
     def collection_name(self, request):
@@ -83,24 +84,26 @@ class TestOperations(TestBase):
         yield request.param
 
     @pytest.mark.tags(CaseLabel.L3)
-    def test_operations(self, request_duration, is_check, collection_name):
+    def test_operations(self, request_duration, is_check, collection_name, user_num):
         # start the monitor threads to check the milvus ops
         log.info("*********************Test Start**********************")
         log.info(connections.get_connection_addr('default'))
-        # event_records = EventRecords()
-        c_name = collection_name if collection_name else cf.gen_unique_str("Checker_")
-        # event_records.insert("init_health_checkers", "start")
-        self.init_health_checkers(collection_name=c_name)
-        # insert data
-        try:
-            self.health_checkers[Op.insert].insert_data(num_entities=400000)
-        except Exception as e:
-            pytest.assume(False, f"collection {c_name} insert data error: {e}")
-            # in this place, may deny to insert data
-            log.error(f"insert data error: {e}")
-        # event_records.insert("init_health_checkers", "finished")
-        cc.start_monitor_threads(self.health_checkers)
-        
+        all_checkers = []
+        for i in range(user_num):
+            c_name = collection_name if collection_name else cf.gen_unique_str("Checker_")
+            log.info(f"start checker for collection name: {c_name}")
+            checker = self.init_health_checkers(collection_name=c_name)
+            all_checkers.append(checker)
+            # insert data
+            try:
+                checker[Op.insert].insert_data(num_entities=400000)
+            except Exception as e:
+                pytest.assume(False, f"collection {c_name} insert data error: {e}")
+                # in this place, may deny to insert data
+                log.error(f"insert data error: {e}")
+        for checker in all_checkers:
+            cc.start_monitor_threads(checker)
+
         log.info("*********************Load Start**********************")
         request_duration = request_duration.replace("h", "*3600+").replace("m", "*60+").replace("s", "")
         if request_duration[-1] == "+":
@@ -108,9 +111,9 @@ class TestOperations(TestBase):
         request_duration = eval(request_duration)
         for i in range(10):
             sleep(request_duration//10)
-            for k, v in self.health_checkers.items():
-                v.check_result()
-                # log.info(v.check_result())
+            for checker in all_checkers:
+                for k, v in checker.items():
+                    v.check_result()
 
         time.sleep(60)
         ra = ResultAnalyzer()

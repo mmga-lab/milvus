@@ -13,7 +13,7 @@ def pytest_addoption(parser):
     parser.addoption("--request_duration", action="store", default="10m", help="request_duration")
     parser.addoption("--is_check", action="store", type=bool, default=False, help="is_check")
     parser.addoption("--wait_signal", action="store", type=bool, default=True, help="wait_signal")
-
+    parser.addoption("--user_num", action="store", type=int, default=1, help="user number")
 
 @pytest.fixture
 def chaos_type(request):
@@ -68,3 +68,8 @@ def is_check(request):
 @pytest.fixture
 def wait_signal(request):
     return request.config.getoption("--wait_signal")
+
+
+@pytest.fixture
+def user_num(request):
+    return request.config.getoption("--user_num")
