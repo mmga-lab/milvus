@@ -1,5 +1,6 @@
 import time
 import pytest
+import threading
 import json
 from time import sleep
 from pymilvus import connections
@@ -89,18 +90,28 @@ class TestOperations(TestBase):
         log.info("*********************Test Start**********************")
         log.info(connections.get_connection_addr('default'))
         all_checkers = []
-        for i in range(user_num):
-            c_name = collection_name if collection_name else cf.gen_unique_str("Checker_")
+
+        def worker(c_name):
             log.info(f"start checker for collection name: {c_name}")
-            checker = self.init_health_checkers(collection_name=c_name)
-            all_checkers.append(checker)
+            op_checker = self.init_health_checkers(collection_name=c_name)
+            all_checkers.append(op_checker)
             # insert data
             try:
-                checker[Op.insert].insert_data(num_entities=400000)
+                op_checker[Op.insert].insert_data(num_entities=400000)
             except Exception as e:
                 pytest.assume(False, f"collection {c_name} insert data error: {e}")
                 # in this place, may deny to insert data
                 log.error(f"insert data error: {e}")
+            # flush data
+        threads = []
+        for i in range(user_num):
+            c_name = collection_name if collection_name else cf.gen_unique_str(f"User_{i}_Checker_")
+            thread = threading.Thread(target=worker, args=(c_name,))
+            threads.append(thread)
+            thread.start()
+
+        for thread in threads:
+            thread.join()
         for checker in all_checkers:
             cc.start_monitor_threads(checker)
 
