@@ -111,6 +111,7 @@ class TestOperations(TestBase):
 
         for thread in threads:
             thread.join()
+
         for checker in all_checkers:
             cc.start_monitor_threads(checker)
 

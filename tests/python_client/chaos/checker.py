@@ -322,12 +322,12 @@ class Checker:
             t0 = time.perf_counter()
             self.insert_one_batch_data(data=data,
                                        timeout=timeout,
-                                       enable_traceback=enable_traceback)            
+                                       enable_traceback=enable_traceback)
             log.info(f"insert data for collection {c_name} cost {time.perf_counter() - t0}s")
 
         self.initial_entities = self.c_wrap.num_entities  # do as a flush
 
-    def insert_data(self, num_entities=10000):
+    def insert_data(self, num_entities=1000):
         batch_size = 20000
         nb = batch_size if num_entities > batch_size else num_entities
         for i in range(num_entities // batch_size):
@@ -337,16 +337,18 @@ class Checker:
                                        enable_traceback=enable_traceback)
             tt = time.perf_counter() - t0
             log.info(f"insert {nb} entities for collection {self.c_name} cost {tt}s")
+            time.sleep(5)
 
     @retry(stop=stop_after_attempt(5), wait=wait_exponential(multiplier=1, min=4, max=10))
     def insert_one_batch_data(self, data, **kwargs):
+        nb = len(data[0])
         res, result = self.c_wrap.insert(data=data,
                                         timeout=timeout,
                                         enable_traceback=enable_traceback)
         if not result:
             raise Exception("insert data failed")
         else:
-            log.info(f"insert data success:{res}")
+            log.info(f"insert data success:{res}, expected: {nb}")
 
     def total(self):
         return self._succ + self._fail
