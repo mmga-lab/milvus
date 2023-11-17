@@ -102,7 +102,6 @@ class TestOperations(TestBase):
                 pytest.assume(False, f"collection {c_name} insert data error: {e}")
                 # in this place, may deny to insert data
                 log.error(f"insert data error: {e}")
-            # flush data
         threads = []
         for i in range(user_num):
             c_name = collection_name if collection_name else cf.gen_unique_str(f"User_{i}_Checker_")
