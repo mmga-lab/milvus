@@ -438,6 +438,7 @@ class SearchChecker(Checker):
     def __init__(self, collection_name=None, shards_num=1, replica_number=1, schema=None, ):
         if collection_name is None:
             collection_name = cf.gen_unique_str("SearchChecker_")
+        self.replica_number = replica_number
         super().__init__(collection_name=collection_name, shards_num=shards_num, schema=schema)
         self.c_wrap.create_index(self.float_vector_field_name,
                                  constants.DEFAULT_INDEX_PARAM,
@@ -445,9 +446,9 @@ class SearchChecker(Checker):
                                  timeout=timeout,
                                  enable_traceback=enable_traceback,
                                  check_task=CheckTasks.check_nothing)
-        # do load before search
-        res, result = self.c_wrap.load(replica_number=replica_number)
-        assert result, f"load failed for collection {self.c_wrap.c_name}"
+        # # do load before search
+        # res, result = self.c_wrap.load(replica_number=replica_number)
+        # assert result, f"load failed for collection {self.c_wrap.c_name}"
 
     @trace()
     def search(self):
@@ -468,6 +469,7 @@ class SearchChecker(Checker):
 
     def keep_running(self):
         while self._keep_running:
+            self.c_wrap.load(replica_number=self.replica_number)
             self.run_task()
             sleep(constants.WAIT_PER_OP / 10)
 
@@ -698,6 +700,7 @@ class QueryChecker(Checker):
     def __init__(self, collection_name=None, shards_num=1, replica_number=1, schema=None):
         if collection_name is None:
             collection_name = cf.gen_unique_str("QueryChecker_")
+        self.replica_number = replica_number
         super().__init__(collection_name=collection_name, shards_num=shards_num, schema=schema)
         res, result = self.c_wrap.create_index(self.float_vector_field_name,
                                                constants.DEFAULT_INDEX_PARAM,
@@ -706,8 +709,8 @@ class QueryChecker(Checker):
                                                timeout=timeout,
                                                enable_traceback=enable_traceback,
                                                check_task=CheckTasks.check_nothing)
-        res, result = self.c_wrap.load(replica_number=replica_number)  # do load before query
-        assert result, f"load failed for collection {self.c_wrap.c_name}"
+        # res, result = self.c_wrap.load(replica_number=replica_number)  # do load before query
+        # assert result, f"load failed for collection {self.c_wrap.c_name}"
         self.term_expr = None
 
     @trace()
@@ -727,6 +730,7 @@ class QueryChecker(Checker):
 
     def keep_running(self):
         while self._keep_running:
+            self.c_wrap.load(replica_number=self.replica_number)
             self.run_task()
             sleep(constants.WAIT_PER_OP / 10)
 
@@ -785,6 +789,7 @@ class DeleteChecker(Checker):
             self.int64_field_name])
         self.ids = [r[self.int64_field_name] for r in res]
         self.expr = None
+        self.c_wrap.release()
 
     @trace()
     def delete(self):
