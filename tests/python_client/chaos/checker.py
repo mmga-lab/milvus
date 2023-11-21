@@ -27,6 +27,7 @@ from utils.api_request import Error
 event_lock = threading.Lock()
 request_lock = threading.Lock()
 
+lock = threading.Lock()
 
 def get_chaos_info():
     try:
@@ -469,7 +470,8 @@ class SearchChecker(Checker):
 
     def keep_running(self):
         while self._keep_running:
-            self.c_wrap.load(replica_number=self.replica_number)
+            with lock:
+                self.c_wrap.load(replica_number=self.replica_number)
             self.run_task()
             sleep(constants.WAIT_PER_OP / 10)
 
@@ -730,7 +732,8 @@ class QueryChecker(Checker):
 
     def keep_running(self):
         while self._keep_running:
-            self.c_wrap.load(replica_number=self.replica_number)
+            with lock:
+                self.c_wrap.load(replica_number=self.replica_number)
             self.run_task()
             sleep(constants.WAIT_PER_OP / 10)
 
