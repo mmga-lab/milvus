@@ -12,6 +12,7 @@ def pytest_addoption(parser):
     parser.addoption("--chaos_interval", action="store", default="2m", help="chaos_interval")
     parser.addoption("--is_check", action="store", type=bool, default=False, help="is_check")
     parser.addoption("--wait_signal", action="store", type=bool, default=True, help="wait_signal")
+    parser.addoption("--db_name", action="store", type=str, default="default", help="db_name")
 
 
 @pytest.fixture
@@ -62,3 +63,8 @@ def is_check(request):
 @pytest.fixture
 def wait_signal(request):
     return request.config.getoption("--wait_signal")
+
+
+@pytest.fixture
+def db_name(request):
+    return request.config.getoption("--db_name")
