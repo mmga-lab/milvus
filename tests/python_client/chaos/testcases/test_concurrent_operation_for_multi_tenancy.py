@@ -5,22 +5,18 @@ import json
 from time import sleep
 from pymilvus import connections
 from chaos.checker import (InsertChecker,
-                           FlushChecker,
-                           CompactChecker,
                            SearchChecker,
                            QueryChecker,
                            DeleteChecker,
                            Op,
                            ResultAnalyzer
                            )
-from utils.util_k8s import wait_pods_ready, get_milvus_instance_name
 from utils.util_log import test_log as log
 from chaos import chaos_commons as cc
 from common import common_func as cf
 from chaos.chaos_commons import assert_statistic
 from common.common_type import CaseLabel
 from chaos import constants
-from delayed_assert import expect, assert_expectations
 
 
 def get_all_collections():
@@ -29,7 +25,7 @@ def get_all_collections():
             data = json.load(f)
             all_collections = data["all"]
     except Exception as e:
-        log.error(f"get_all_collections error: {e}")
+        log.warn(f"get_all_collections error: {e}")
         return [None]
     return all_collections
 

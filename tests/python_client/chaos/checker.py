@@ -28,6 +28,8 @@ event_lock = threading.Lock()
 request_lock = threading.Lock()
 
 lock = threading.Lock()
+sem = threading.Semaphore(3)
+
 
 def get_chaos_info():
     try:
@@ -46,6 +48,17 @@ class Singleton(type):
         if cls not in cls.instances:
             cls.instances[cls] = super().__call__(*args, **kwargs)
         return cls.instances[cls]
+
+
+def synchronized(semaphore):
+    def wrapper(func):
+        func.__semaphore__ = semaphore
+
+        def inner_wrapper(*args, **kwargs):
+            with func.__semaphore__:
+                return func(*args, **kwargs)
+        return inner_wrapper
+    return wrapper
 
 
 class EventRecords(metaclass=Singleton):
@@ -340,6 +353,7 @@ class Checker:
             log.info(f"insert {nb} entities for collection {self.c_name} cost {tt}s")
             time.sleep(5)
 
+    @synchronized(sem)
     @retry(stop=stop_after_attempt(5), wait=wait_exponential(multiplier=1, min=4, max=10))
     def insert_one_batch_data(self, data, **kwargs):
         nb = len(data[0])
@@ -447,9 +461,9 @@ class SearchChecker(Checker):
                                  timeout=timeout,
                                  enable_traceback=enable_traceback,
                                  check_task=CheckTasks.check_nothing)
-        # # do load before search
-        # res, result = self.c_wrap.load(replica_number=replica_number)
-        # assert result, f"load failed for collection {self.c_wrap.c_name}"
+        with lock:
+            log.info(f"load collection {self.c_name}")
+            self.c_wrap.load(replica_number=self.replica_number)
 
     @trace()
     def search(self):
@@ -470,8 +484,6 @@ class SearchChecker(Checker):
 
     def keep_running(self):
         while self._keep_running:
-            with lock:
-                self.c_wrap.load(replica_number=self.replica_number)
             self.run_task()
             sleep(constants.WAIT_PER_OP / 10)
 
@@ -711,8 +723,9 @@ class QueryChecker(Checker):
                                                timeout=timeout,
                                                enable_traceback=enable_traceback,
                                                check_task=CheckTasks.check_nothing)
-        # res, result = self.c_wrap.load(replica_number=replica_number)  # do load before query
-        # assert result, f"load failed for collection {self.c_wrap.c_name}"
+        with lock:
+            log.info(f"load collection {self.c_name}")
+            self.c_wrap.load(replica_number=self.replica_number)
         self.term_expr = None
 
     @trace()
@@ -732,8 +745,6 @@ class QueryChecker(Checker):
 
     def keep_running(self):
         while self._keep_running:
-            with lock:
-                self.c_wrap.load(replica_number=self.replica_number)
             self.run_task()
             sleep(constants.WAIT_PER_OP / 10)
 
