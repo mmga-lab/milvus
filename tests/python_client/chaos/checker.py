@@ -461,9 +461,18 @@ class SearchChecker(Checker):
                                  timeout=timeout,
                                  enable_traceback=enable_traceback,
                                  check_task=CheckTasks.check_nothing)
-        with lock:
-            log.info(f"load collection {self.c_name}")
-            self.c_wrap.load(replica_number=self.replica_number)
+        self.prepare()
+
+    @synchronized(sem)
+    @retry(stop=stop_after_attempt(5), wait=wait_exponential(multiplier=1, min=4, max=10))
+    def prepare(self):
+        log.info(f"load collection {self.c_name} start")
+        res, result = self.c_wrap.load(replica_number=self.replica_number)
+        if not result:
+            raise Exception("load collection failed")
+        else:
+            log.info(f"load collection {self.c_name} finish")
+
 
     @trace()
     def search(self):
@@ -723,10 +732,18 @@ class QueryChecker(Checker):
                                                timeout=timeout,
                                                enable_traceback=enable_traceback,
                                                check_task=CheckTasks.check_nothing)
-        with lock:
-            log.info(f"load collection {self.c_name}")
-            self.c_wrap.load(replica_number=self.replica_number)
         self.term_expr = None
+        self.prepare()
+
+    @synchronized(sem)
+    @retry(stop=stop_after_attempt(5), wait=wait_exponential(multiplier=1, min=4, max=10))
+    def prepare(self):
+        log.info(f"load collection {self.c_name} start")
+        res, result = self.c_wrap.load(replica_number=self.replica_number)
+        if not result:
+            raise Exception("load collection failed")
+        else:
+            log.info(f"load collection {self.c_name} finish")
 
     @trace()
     def query(self):
