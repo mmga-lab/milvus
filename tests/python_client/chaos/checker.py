@@ -342,7 +342,7 @@ class Checker:
         self.initial_entities = self.c_wrap.num_entities  # do as a flush
 
     def insert_data(self, num_entities=1000):
-        batch_size = 20000
+        batch_size = 10000
         nb = batch_size if num_entities > batch_size else num_entities
         for i in range(num_entities // batch_size):
             t0 = time.perf_counter()
@@ -820,7 +820,6 @@ class DeleteChecker(Checker):
             self.int64_field_name])
         self.ids = [r[self.int64_field_name] for r in res]
         self.expr = None
-        self.c_wrap.release()
 
     @trace()
     def delete(self):
