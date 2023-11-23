@@ -455,17 +455,27 @@ class SearchChecker(Checker):
             collection_name = cf.gen_unique_str("SearchChecker_")
         self.replica_number = replica_number
         super().__init__(collection_name=collection_name, shards_num=shards_num, schema=schema)
-        self.c_wrap.create_index(self.float_vector_field_name,
-                                 constants.DEFAULT_INDEX_PARAM,
-                                 index_name=cf.gen_unique_str('index_'),
-                                 timeout=timeout,
-                                 enable_traceback=enable_traceback,
-                                 check_task=CheckTasks.check_nothing)
         self.prepare()
 
     @synchronized(sem)
     @retry(stop=stop_after_attempt(5), wait=wait_exponential(multiplier=1, min=4, max=10))
     def prepare(self):
+        index_info = [x.to_dict() for x in self.c_wrap.indexes]
+        log.info(f"index info: {index_info}")
+        if len(index_info) == 0:
+            log.info(f"create index for collection {self.c_name} start")
+            res, result = self.c_wrap.create_index(self.float_vector_field_name,
+                                                   constants.DEFAULT_INDEX_PARAM,
+                                                   index_name=cf.gen_unique_str(
+                                                       'index_'),
+                                                   timeout=timeout,
+                                                   enable_traceback=enable_traceback,
+                                                   check_task=CheckTasks.check_nothing)
+            if not result:
+                raise Exception("create index failed")
+            else:
+                log.info(f"create index for collection {self.c_name} finish")
+
         log.info(f"load collection {self.c_name} start")
         res, result = self.c_wrap.load(replica_number=self.replica_number)
         if not result:
@@ -726,19 +736,28 @@ class QueryChecker(Checker):
             collection_name = cf.gen_unique_str("QueryChecker_")
         self.replica_number = replica_number
         super().__init__(collection_name=collection_name, shards_num=shards_num, schema=schema)
-        res, result = self.c_wrap.create_index(self.float_vector_field_name,
-                                               constants.DEFAULT_INDEX_PARAM,
-                                               index_name=cf.gen_unique_str(
-                                                   'index_'),
-                                               timeout=timeout,
-                                               enable_traceback=enable_traceback,
-                                               check_task=CheckTasks.check_nothing)
         self.term_expr = None
         self.prepare()
 
     @synchronized(sem)
     @retry(stop=stop_after_attempt(5), wait=wait_exponential(multiplier=1, min=4, max=10))
     def prepare(self):
+        index_info = [x.to_dict() for x in self.c_wrap.indexes]
+        log.info(f"index info: {index_info}")
+        if len(index_info) == 0:
+            log.info(f"create index for collection {self.c_name} start")
+            res, result = self.c_wrap.create_index(self.float_vector_field_name,
+                                                   constants.DEFAULT_INDEX_PARAM,
+                                                   index_name=cf.gen_unique_str(
+                                                       'index_'),
+                                                   timeout=timeout,
+                                                   enable_traceback=enable_traceback,
+                                                   check_task=CheckTasks.check_nothing)
+            if not result:
+                raise Exception("create index failed")
+            else:
+                log.info(f"create index for collection {self.c_name} finish")
+
         log.info(f"load collection {self.c_name} start")
         res, result = self.c_wrap.load(replica_number=self.replica_number)
         if not result:
