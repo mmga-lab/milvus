@@ -492,6 +492,7 @@ class SearchChecker(Checker):
         return res, result
 
     def keep_running(self):
+        self.prepare()
         while self._keep_running:
             self.run_task()
             sleep(constants.WAIT_PER_OP / 10)
@@ -761,6 +762,7 @@ class QueryChecker(Checker):
         return res, result
 
     def keep_running(self):
+        self.prepare()
         while self._keep_running:
             self.run_task()
             sleep(constants.WAIT_PER_OP / 10)
