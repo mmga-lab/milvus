@@ -100,7 +100,7 @@ class TestOperations(TestBase):
                 log.error(f"insert data error: {e}")
         threads = []
         for i in range(user_num):
-            c_name = collection_name if collection_name else cf.gen_unique_str(f"User_{i}_Checker_")
+            c_name = collection_name if collection_name else f"User_{i}_Checker"
             thread = threading.Thread(target=worker, args=(c_name,))
             threads.append(thread)
             thread.start()
