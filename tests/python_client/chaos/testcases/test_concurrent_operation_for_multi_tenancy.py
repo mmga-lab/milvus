@@ -65,10 +65,8 @@ class TestOperations(TestBase):
         c_name = collection_name
         checkers = {
             Op.insert: InsertChecker(collection_name=c_name),
-            # Op.flush: FlushChecker(collection_name=c_name),
             Op.search: SearchChecker(collection_name=c_name),
             Op.query: QueryChecker(collection_name=c_name),
-            # Op.compact: CompactChecker(collection_name=c_name),
             Op.delete: DeleteChecker(collection_name=c_name),
         }
         self.health_checkers = checkers
@@ -105,11 +103,11 @@ class TestOperations(TestBase):
             threads.append(thread)
             thread.start()
 
-        for thread in threads:
-            thread.join()
-
         for checker in all_checkers:
             cc.start_monitor_threads(checker)
+
+        for thread in threads:
+            thread.join()
 
         log.info("*********************Load Start**********************")
         request_duration = request_duration.replace("h", "*3600+").replace("m", "*60+").replace("s", "")

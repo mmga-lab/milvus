@@ -341,7 +341,7 @@ class Checker:
 
         self.initial_entities = self.c_wrap.num_entities  # do as a flush
 
-    def insert_data(self, num_entities=1000, max_cap=600000):
+    def insert_data(self, num_entities=1000, max_cap=400000):
         batch_size = 10000
         nb = batch_size if num_entities > batch_size else num_entities
         for i in range(num_entities // batch_size):
@@ -352,10 +352,11 @@ class Checker:
             tt = time.perf_counter() - t0
             log.info(f"insert {nb} entities for collection {self.c_name} cost {tt}s")
             time.sleep(5)
-            current_entities = self.c_wrap.num_entities
-            if current_entities >= max_cap:
-                log.info(f"collection {self.c_name} has {current_entities} entities, stop insert")
-                break
+            if i % 10 == 0:
+                current_entities = self.c_wrap.num_entities
+                if current_entities >= max_cap:
+                    log.info(f"collection {self.c_name} has {current_entities} entities, stop insert")
+                    break
 
     @synchronized(sem)
     @retry(stop=stop_after_attempt(5), wait=wait_exponential(multiplier=1, min=4, max=10))
@@ -595,7 +596,7 @@ class InsertChecker(Checker):
     def __init__(self, collection_name=None, flush=False, shards_num=1, schema=None):
         if collection_name is None:
             collection_name = cf.gen_unique_str("InsertChecker_")
-        super().__init__(collection_name=collection_name, shards_num=shards_num, schema=schema)
+        super().__init__(collection_name=collection_name, shards_num=shards_num, schema=schema, insert_data=True)
         self._flush = flush
         self.initial_entities = self.c_wrap.num_entities
         self.inserted_data = []
