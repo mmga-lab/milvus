@@ -93,7 +93,6 @@ class TestOperations(TestBase):
             try:
                 op_checker[Op.insert].insert_data(num_entities=400000)
             except Exception as e:
-                pytest.assume(False, f"collection {c_name} insert data error: {e}")
                 # in this place, may deny to insert data
                 log.error(f"insert data error: {e}")
         threads = []
@@ -102,12 +101,11 @@ class TestOperations(TestBase):
             thread = threading.Thread(target=worker, args=(c_name,))
             threads.append(thread)
             thread.start()
+        for thread in threads:
+            thread.join()
 
         for checker in all_checkers:
             cc.start_monitor_threads(checker)
-
-        for thread in threads:
-            thread.join()
 
         log.info("*********************Load Start**********************")
         request_duration = request_duration.replace("h", "*3600+").replace("m", "*60+").replace("s", "")
