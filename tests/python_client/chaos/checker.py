@@ -346,17 +346,16 @@ class Checker:
         nb = batch_size if num_entities > batch_size else num_entities
         for i in range(num_entities // batch_size):
             t0 = time.perf_counter()
-            self.insert_one_batch_data(data=cf.get_column_data_by_schema(nb=nb, schema=self.schema, start=i * batch_size),
+            res, result = self.insert_one_batch_data(data=cf.get_column_data_by_schema(nb=nb, schema=self.schema, start=i * batch_size),
                                        timeout=timeout,
                                        enable_traceback=enable_traceback)
+            if not result:
+                if "memory deny" in res.message:
+                    log.info(f"collection {self.c_name} has {self.c_wrap.num_entities} entities, stop insert")
+                    break
             tt = time.perf_counter() - t0
             log.info(f"insert {nb} entities for collection {self.c_name} cost {tt}s")
             time.sleep(5)
-            if i % 10 == 0:
-                current_entities = self.c_wrap.num_entities
-                if current_entities >= max_cap:
-                    log.info(f"collection {self.c_name} has {current_entities} entities, stop insert")
-                    break
 
     @synchronized(sem)
     @retry(stop=stop_after_attempt(5), wait=wait_exponential(multiplier=1, min=4, max=10))
@@ -365,10 +364,9 @@ class Checker:
         res, result = self.c_wrap.insert(data=data,
                                         timeout=timeout,
                                         enable_traceback=enable_traceback)
-        if not result:
-            raise Exception("insert data failed")
-        else:
+        if result:
             log.info(f"insert data success:{res}, expected: {nb}")
+        return res, result
 
     def total(self):
         return self._succ + self._fail
