@@ -91,7 +91,11 @@ class TestOperations(TestBase):
             all_checkers.append(op_checker)
             # insert data
             try:
-                op_checker[Op.insert].insert_data(num_entities=400000)
+                num_entities = op_checker[Op.insert].c_wrap.num_entities
+                if num_entities < 500000:
+                    op_checker[Op.insert].insert_data(num_entities=500000-num_entities)
+                else:
+                    log.info(f"collection {c_name} has enough data {num_entities}, skip insert data")
             except Exception as e:
                 # in this place, may deny to insert data
                 log.error(f"insert data error: {e}")
