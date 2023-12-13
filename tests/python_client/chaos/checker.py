@@ -198,14 +198,20 @@ class ResultAnalyzer:
 
 
 class Op(Enum):
+    create = 'create'
     create_collection = 'create_collection'
     create_partition = 'create_partition'
     create_db = 'create_db'
     insert = 'insert'
     flush = 'flush'
     index = 'index'
+    create_index = 'create_index'
+    drop_index = 'drop_index'
     load = 'load'
     load_partition = 'load_partition'
+    release = "release"
+    release_collection = 'release_collection'
+    release_partition = 'release_partition'
     search = 'search'
     query = 'query'
     delete = 'delete'
