@@ -8,6 +8,7 @@ from yaml import full_load
 from pymilvus import connections, utility
 from chaos.checker import (CreateChecker,
                            InsertChecker,
+                           UpsertChecker,
                            FlushChecker,
                            SearchChecker,
                            QueryChecker,
@@ -63,6 +64,7 @@ class TestOperations(TestBase):
         checkers = {
             Op.create: CreateChecker(collection_name=None, schema=schema),
             Op.insert: InsertChecker(collection_name=c_name, schema=schema),
+            Op.upsert: UpsertChecker(collection_name=c_name, schema=schema),
             Op.flush: FlushChecker(collection_name=c_name, schema=schema),
             Op.index: IndexChecker(collection_name=None, schema=schema),
             Op.search: SearchChecker(collection_name=c_name, schema=schema),
@@ -132,9 +134,9 @@ class TestOperations(TestBase):
             v.pause()
         for k, v in self.health_checkers.items():
             v.check_result()
-        for k, v in self.health_checkers.items():  
+        for k, v in self.health_checkers.items():
             log.info(f"{k} failed request: {v.fail_records}")
-        for k, v in self.health_checkers.items():  
+        for k, v in self.health_checkers.items():
             log.info(f"{k} rto: {v.get_rto()}")
         if is_check:
             assert_statistic(self.health_checkers, succ_rate_threshold=0.98)

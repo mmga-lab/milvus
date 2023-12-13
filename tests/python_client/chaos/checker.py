@@ -197,6 +197,7 @@ class ResultAnalyzer:
 class Op(Enum):
     create = 'create'
     insert = 'insert'
+    upsert = 'upsert'
     flush = 'flush'
     index = 'index'
     search = 'search'
@@ -597,6 +598,34 @@ class InsertChecker(Checker):
             d = r[f"{ct.default_int64_field_name}"]
             data_in_server.append(d)
         pytest.assume(set(data_in_server) == set(data_in_client))
+
+
+class UpsertChecker(Checker):
+    """check upsert operations in a dependent thread"""
+
+    def __init__(self, collection_name=None, flush=False, shards_num=2, schema=None):
+        if collection_name is None:
+            collection_name = cf.gen_unique_str("InsertChecker_")
+        super().__init__(collection_name=collection_name, shards_num=shards_num, schema=schema)
+
+    @trace()
+    def upsert(self):
+        data = cf.get_column_data_by_schema(nb=constants.DELTA_PER_INS, schema=self.schema)
+        res, result = self.c_wrap.upsert(data=data,
+                                         timeout=timeout,
+                                         enable_traceback=enable_traceback,
+                                         check_task=CheckTasks.check_nothing)
+        return res, result
+
+    @exception_handler()
+    def run_task(self):
+        res, result = self.upsert()
+        return res, result
+
+    def keep_running(self):
+        while self._keep_running:
+            self.run_task()
+            sleep(constants.WAIT_PER_OP / 10)
 
 
 class CreateChecker(Checker):

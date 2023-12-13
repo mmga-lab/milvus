@@ -5,6 +5,7 @@ from time import sleep
 from pymilvus import connections
 from chaos.checker import (CreateChecker,
                            InsertChecker,
+                           UpsertChecker,
                            FlushChecker,
                            SearchChecker,
                            QueryChecker,
@@ -63,6 +64,7 @@ class TestOperations(TestBase):
         checkers = {
             Op.create: CreateChecker(collection_name=c_name),
             Op.insert: InsertChecker(collection_name=c_name),
+            Op.upsert: UpsertChecker(collection_name=c_name),
             Op.flush: FlushChecker(collection_name=c_name),
             Op.index: IndexChecker(collection_name=c_name),
             Op.search: SearchChecker(collection_name=c_name),
