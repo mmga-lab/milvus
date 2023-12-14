@@ -1,6 +1,3 @@
-
-
-
 """
 db --> collection --> partition
 
@@ -16,7 +13,6 @@ compare result
 
 """
 
-
 from loguru import logger
 import json
 import pandas as pd
@@ -25,12 +21,14 @@ from deepdiff import DeepDiff
 from pymilvus import connections, Collection, db, list_collections
 import threading
 
+
 def convert_deepdiff(diff):
     if isinstance(diff, dict):
         return {k: convert_deepdiff(v) for k, v in diff.items()}
     elif isinstance(diff, collections.abc.Set):
         return list(diff)
     return diff
+
 
 def flatten_dict(d, parent_key='', sep='_', depth=0, max_depth=3):
     """
@@ -74,6 +72,7 @@ def get_collection_info(info, db_name, c_name):
     logger.info(replicas)
     info[db_name][c_name]['replicas'] = replicas
 
+
 def get_cluster_info(host, port, user, password):
     try:
         connections.disconnect(alias='default')
@@ -98,23 +97,14 @@ def get_cluster_info(host, port, user, password):
             t.start()
         for t in threads:
             t.join()
-        
 
-    # # create index and load to get count
-    # for db_name in all_db:
-    #     db.using_database(db_name)
-    #     all_collection = list_collections()
-    #     logger.info(all_collection)
-    #     for collection_name in all_collection:
-    #         c = Collection(name=collection_name)
-    #         c.flush()
-    #         info[db_name][collection_name]['num_entities_after_flush'] = c.num_entities
     logger.info(json.dumps(info, indent=2))
     return info
 
 
 if __name__ == '__main__':
     import argparse
+
     parser = argparse.ArgumentParser(description='connection info')
     parser.add_argument('--upstream_host', type=str, default='10.100.36.179', help='milvus host')
     parser.add_argument('--downstream_host', type=str, default='10.100.36.178', help='milvus host')
