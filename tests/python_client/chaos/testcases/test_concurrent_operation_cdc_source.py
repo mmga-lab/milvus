@@ -5,6 +5,8 @@ from time import sleep
 from pymilvus import connections, db
 from chaos.checker import (InsertChecker,
                            FlushChecker,
+                           QueryChecker,
+                           SearchChecker,
                            LoadChecker,
                            IndexChecker,
                            CreateChecker,
@@ -79,11 +81,13 @@ class TestOperations(TestBase):
             Op.flush: FlushChecker(collection_name=c_name),
             Op.index: IndexChecker(collection_name=c_name),
             Op.load: LoadChecker(collection_name=c_name),
-            # Op.load_partition: LoadChecker(collection_name=c_name, partition_name=p_name),
+            Op.search: SearchChecker(collection_name=c_name),
+            Op.query: QueryChecker(collection_name=c_name),
+            Op.load_partition: LoadChecker(collection_name=c_name, partition_name=p_name),
             Op.create_partition: PartitionChecker(collection_name=c_name, partition_name=p_name),
             Op.create_collection: CreateChecker(collection_name=c_name),
             Op.create_db: DatabaseChecker(collection_name=c_name),
-            Op.delete: DeleteChecker(collection_name=c_name)
+            Op.delete: DeleteChecker(collection_name=c_name),
         }
         self.health_checkers = checkers
 
