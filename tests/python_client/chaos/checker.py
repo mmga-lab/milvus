@@ -344,6 +344,24 @@ class Checker:
             log.info(f"insert data for collection {c_name} cost {time.perf_counter() - t0}s")
 
         self.initial_entities = self.c_wrap.num_entities  # do as a flush
+        self.scale = 1 * 10 ** 6
+
+    def insert_data(self, nb=constants.DELTA_PER_INS):
+        data = cf.get_column_data_by_schema(nb=nb, schema=self.schema)
+        ts_data = []
+        for i in range(nb):
+            time.sleep(0.001)
+            offset_ts = int(time.time() * self.scale)
+            ts_data.append(offset_ts)
+
+        data[0] = ts_data  # set timestamp (ms) as int64
+        log.debug(f"insert data: {ts_data}")
+        res, result = self.c_wrap.insert(data=data,
+                                         partition_name=self.p_name,
+                                         timeout=timeout,
+                                         enable_traceback=enable_traceback,
+                                         check_task=CheckTasks.check_nothing)
+        return res, result
 
     def total(self):
         return self._succ + self._fail
@@ -591,9 +609,9 @@ class InsertChecker(Checker):
                                          timeout=timeout,
                                          enable_traceback=enable_traceback,
                                          check_task=CheckTasks.check_nothing)
-        if result:
-            # TODO: persist data to file
-            self.inserted_data.extend(ts_data)
+        # if result:
+        #     # TODO: persist data to file
+        #     self.inserted_data.extend(ts_data)
         return res, result
 
     @exception_handler()
@@ -827,22 +845,38 @@ class DeleteChecker(Checker):
                                                enable_traceback=enable_traceback,
                                                check_task=CheckTasks.check_nothing)
         self.c_wrap.load()  # load before query
-        term_expr = f'{self.int64_field_name} > 0'
-        res, _ = self.c_wrap.query(term_expr,
+        query_expr = f'{self.int64_field_name} > 0'
+        res, _ = self.c_wrap.query(query_expr,
                                    output_fields=[self.int64_field_name],
                                    partition_name=self.p_name)
         self.ids = [r[self.int64_field_name] for r in res]
-        self.expr = None
+        self.query_expr = query_expr
+        delete_ids = self.ids[:len(self.ids) // 2] # delete half of ids
+        self.delete_expr = f'{self.int64_field_name} in {delete_ids}'
+
+    def update_delete_expr(self):
+        res, _ = self.c_wrap.query(self.query_expr,
+                                   output_fields=[self.int64_field_name],
+                                   partition_name=self.p_name)
+        all_ids = [r[self.int64_field_name] for r in res]
+        if len(all_ids) < 100:
+            # insert data to make sure there are enough ids to delete
+            self.insert_data(nb=10000)
+            res, _ = self.c_wrap.query(self.query_expr,
+                                       output_fields=[self.int64_field_name],
+                                       partition_name=self.p_name)
+            all_ids = [r[self.int64_field_name] for r in res]
+        delete_ids = all_ids[:len(all_ids) // 2]  # delete half of ids
+        self.delete_expr = f'{self.int64_field_name} in {delete_ids}'
 
     @trace()
     def delete(self):
-        res, result = self.c_wrap.delete(expr=self.expr, timeout=timeout, partition_name=self.p_name)
+        res, result = self.c_wrap.delete(expr=self.delete_expr, timeout=timeout, partition_name=self.p_name)
         return res, result
 
     @exception_handler()
     def run_task(self):
-        delete_ids = self.ids.pop()
-        self.expr = f'{self.int64_field_name} in {[delete_ids]}'
+        self.update_delete_expr()
         res, result = self.delete()
         return res, result
 
