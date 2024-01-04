@@ -305,7 +305,7 @@ class Checker:
        b. count operations and success rate
     """
 
-    def __init__(self, collection_name=None, partition_name=None, shards_num=2, dim=ct.default_dim, insert_data=True,
+    def __init__(self, collection_name=None, partition_name=None, shards_num=1, dim=768, insert_data=True,
                  schema=None):
         self.recovery_time = 0
         self._succ = 0

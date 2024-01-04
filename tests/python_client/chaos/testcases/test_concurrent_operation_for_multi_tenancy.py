@@ -100,9 +100,10 @@ class TestOperations(TestBase):
             # insert data in init stage
             try:
                 num_entities = op_checker[Op.insert].c_wrap.num_entities
-                if num_entities < 200000:
+                total_entities = 400000
+                if num_entities < total_entities:
                     nb = 5000
-                    num_to_insert = 200000 - num_entities
+                    num_to_insert = total_entities - num_entities
                     for i in range(num_to_insert//nb):
                         op_checker[Op.insert].insert_data(nb=nb)
                 else:
