@@ -332,6 +332,7 @@ class Checker:
         self.dim = cf.get_dim_by_schema(schema=schema)
         self.int64_field_name = cf.get_int64_field_name(schema=schema)
         self.float_vector_field_name = cf.get_float_vec_field_name(schema=schema)
+        self.vec_index_name = "vec_index"
         self.c_wrap.init_collection(name=c_name,
                                     schema=schema,
                                     shards_num=shards_num,
@@ -450,7 +451,7 @@ class CollectionLoadChecker(Checker):
         super().__init__(collection_name=collection_name, shards_num=shards_num, schema=schema)
         self.c_wrap.create_index(self.float_vector_field_name,
                                  constants.DEFAULT_INDEX_PARAM,
-                                 index_name=cf.gen_unique_str('index_'),
+                                 index_name=self.vec_index_name,
                                  timeout=timeout,
                                  enable_traceback=enable_traceback,
                                  check_task=CheckTasks.check_nothing)
@@ -483,7 +484,7 @@ class CollectionReleaseChecker(Checker):
         super().__init__(collection_name=collection_name, shards_num=shards_num, schema=schema)
         self.c_wrap.create_index(self.float_vector_field_name,
                                  constants.DEFAULT_INDEX_PARAM,
-                                 index_name=cf.gen_unique_str('index_'),
+                                 index_name=self.vec_index_name,
                                  timeout=timeout,
                                  enable_traceback=enable_traceback,
                                  check_task=CheckTasks.check_nothing)
@@ -517,7 +518,7 @@ class PartitionLoadChecker(Checker):
         super().__init__(collection_name=collection_name, shards_num=shards_num, schema=schema)
         self.c_wrap.create_index(self.float_vector_field_name,
                                  constants.DEFAULT_INDEX_PARAM,
-                                 index_name=cf.gen_unique_str('index_'),
+                                 index_name=self.vec_index_name,
                                  timeout=timeout,
                                  enable_traceback=enable_traceback,
                                  check_task=CheckTasks.check_nothing)
@@ -550,7 +551,7 @@ class PartitionReleaseChecker(Checker):
         super().__init__(collection_name=collection_name, shards_num=shards_num, schema=schema)
         self.c_wrap.create_index(self.float_vector_field_name,
                                  constants.DEFAULT_INDEX_PARAM,
-                                 index_name=cf.gen_unique_str('index_'),
+                                 index_name=self.vec_index_name,
                                  timeout=timeout,
                                  enable_traceback=enable_traceback,
                                  check_task=CheckTasks.check_nothing)
@@ -583,7 +584,7 @@ class SearchChecker(Checker):
         super().__init__(collection_name=collection_name, shards_num=shards_num, schema=schema)
         self.c_wrap.create_index(self.float_vector_field_name,
                                  constants.DEFAULT_INDEX_PARAM,
-                                 index_name=cf.gen_unique_str('index_'),
+                                 index_name=self.vec_index_name,
                                  timeout=timeout,
                                  enable_traceback=enable_traceback,
                                  check_task=CheckTasks.check_nothing)
@@ -740,7 +741,7 @@ class InsertChecker(Checker):
         try:
             self.c_wrap.create_index(self.float_vector_field_name,
                                      constants.DEFAULT_INDEX_PARAM,
-                                     index_name=cf.gen_unique_str('index_'),
+                                     index_name=self.vec_index_name,
                                      timeout=timeout,
                                      enable_traceback=enable_traceback,
                                      check_task=CheckTasks.check_nothing)
@@ -1013,6 +1014,7 @@ class IndexCreateChecker(Checker):
 
     @trace()
     def create_index(self):
+        self.index_name = cf.gen_unique_str('index_')
         res, result = self.c_wrap.create_index(self.float_vector_field_name,
                                                constants.DEFAULT_INDEX_PARAM,
                                                index_name=self.index_name,
@@ -1061,6 +1063,7 @@ class IndexDropChecker(Checker):
     def run_task(self):
         res, result = self.drop_index()
         if result:
+            self.index_name = cf.gen_unique_str('index_')
             self.c_wrap.create_index(self.float_vector_field_name,
                                      constants.DEFAULT_INDEX_PARAM,
                                      index_name=self.index_name,
@@ -1083,8 +1086,7 @@ class QueryChecker(Checker):
         super().__init__(collection_name=collection_name, shards_num=shards_num, schema=schema)
         res, result = self.c_wrap.create_index(self.float_vector_field_name,
                                                constants.DEFAULT_INDEX_PARAM,
-                                               index_name=cf.gen_unique_str(
-                                                   'index_'),
+                                               index_name=self.vec_index_name,
                                                timeout=timeout,
                                                enable_traceback=enable_traceback,
                                                check_task=CheckTasks.check_nothing)
@@ -1122,8 +1124,7 @@ class DeleteChecker(Checker):
         super().__init__(collection_name=collection_name, schema=schema)
         res, result = self.c_wrap.create_index(self.float_vector_field_name,
                                                constants.DEFAULT_INDEX_PARAM,
-                                               index_name=cf.gen_unique_str(
-                                                   'index_'),
+                                               index_name=self.vec_index_name,
                                                timeout=timeout,
                                                enable_traceback=enable_traceback,
                                                check_task=CheckTasks.check_nothing)
@@ -1163,8 +1164,7 @@ class CompactChecker(Checker):
         self.ut = ApiUtilityWrapper()
         res, result = self.c_wrap.create_index(self.float_vector_field_name,
                                                constants.DEFAULT_INDEX_PARAM,
-                                               index_name=cf.gen_unique_str(
-                                                   'index_'),
+                                               index_name=self.vec_index_name,
                                                timeout=timeout,
                                                enable_traceback=enable_traceback,
                                                check_task=CheckTasks.check_nothing)
@@ -1198,8 +1198,7 @@ class LoadBalanceChecker(Checker):
         self.utility_wrap = ApiUtilityWrapper()
         res, result = self.c_wrap.create_index(self.float_vector_field_name,
                                                constants.DEFAULT_INDEX_PARAM,
-                                               index_name=cf.gen_unique_str(
-                                                   'index_'),
+                                               index_name=self.vec_index_name,
                                                timeout=timeout,
                                                enable_traceback=enable_traceback,
                                                check_task=CheckTasks.check_nothing)
