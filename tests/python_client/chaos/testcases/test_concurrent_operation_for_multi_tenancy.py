@@ -47,6 +47,7 @@ class TestOperations(TestBase):
     @pytest.fixture(scope="function", autouse=True)
     def connection(self, host, port, user, password, db_name, milvus_ns):
         if user and password:
+            password = password.strip('"')  # remove the double quotes,just a hack
             masked_password = "*" * (len(password)//3)
             masked_password = password[:len(password)//3] + masked_password + password[len(password)*2//3:]
             log.info(f"connect to {host}:{port} with user {user} and password {masked_password}")
