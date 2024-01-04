@@ -4,7 +4,7 @@ from enum import Enum
 from random import randint
 import time
 import threading
-import os
+from tenacity import retry, stop_after_attempt, wait_exponential
 import uuid
 import json
 import pandas as pd
@@ -351,6 +351,8 @@ class Checker:
 
         self.initial_entities = self.c_wrap.num_entities  # do as a flush
 
+    @exception_handler()
+    @retry(stop=stop_after_attempt(5), wait=wait_exponential(multiplier=1, min=4, max=10))
     def insert_data(self, nb=constants.ENTITIES_FOR_SEARCH, partition_name=None):
         partition_name = self.p_name if partition_name is None else partition_name
         self.c_wrap.insert(
