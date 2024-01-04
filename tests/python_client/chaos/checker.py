@@ -355,11 +355,13 @@ class Checker:
     @retry(stop=stop_after_attempt(5), wait=wait_exponential(multiplier=1, min=4, max=10))
     def insert_data(self, nb=constants.ENTITIES_FOR_SEARCH, partition_name=None):
         partition_name = self.p_name if partition_name is None else partition_name
+        t0 = time.perf_counter()
         self.c_wrap.insert(
             data=cf.get_column_data_by_schema(nb=nb, schema=self.schema, start=0),
             partition_name=partition_name,
             timeout=timeout,
             enable_traceback=enable_traceback)
+        log.info(f"insert {nb} data for collection {self.c_name} cost {time.perf_counter() - t0}s")
 
     def total(self):
         return self._succ + self._fail
