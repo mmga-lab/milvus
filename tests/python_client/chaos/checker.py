@@ -595,10 +595,10 @@ class SearchChecker(Checker):
     @trace()
     def search(self):
         res, result = self.c_wrap.search(
-            data=cf.gen_vectors(5, self.dim),
+            data=cf.gen_vectors(100, self.dim),
             anns_field=self.float_vector_field_name,
             param=constants.DEFAULT_SEARCH_PARAM,
-            limit=1,
+            limit=1000,
             partition_names=self.p_names,
             timeout=search_timeout,
             check_task=CheckTasks.check_nothing
@@ -1105,7 +1105,7 @@ class QueryChecker(Checker):
         int_values = []
         for _ in range(5):
             int_values.append(randint(0, constants.ENTITIES_FOR_SEARCH))
-        self.term_expr = f'{self.int64_field_name} in {int_values}'
+        self.term_expr = f'{self.int64_field_name} > 0'
         res, result = self.query()
         return res, result
 
