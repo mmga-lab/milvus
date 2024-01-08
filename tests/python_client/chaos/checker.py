@@ -341,14 +341,7 @@ class Checker:
         self.p_wrap.init_partition(self.c_name, self.p_name)
         if insert_data:
             log.info(f"collection {c_name} created, start to insert data")
-            t0 = time.perf_counter()
-            self.c_wrap.insert(
-                data=cf.get_column_data_by_schema(nb=constants.ENTITIES_FOR_SEARCH, schema=schema, start=0),
-                partition_name=self.p_name,
-                timeout=timeout,
-                enable_traceback=enable_traceback)
-            log.info(f"insert data for collection {c_name} cost {time.perf_counter() - t0}s")
-
+            self.insert_data(nb=constants.ENTITIES_FOR_SEARCH)
         self.initial_entities = self.c_wrap.num_entities  # do as a flush
 
     @exception_handler()
