@@ -27,6 +27,7 @@ from utils.api_request import Error
 
 event_lock = threading.Lock()
 request_lock = threading.Lock()
+sem = threading.Semaphore(3)
 
 
 def get_chaos_info():
@@ -46,6 +47,17 @@ class Singleton(type):
         if cls not in cls.instances:
             cls.instances[cls] = super().__call__(*args, **kwargs)
         return cls.instances[cls]
+
+
+def synchronized(semaphore):
+    def wrapper(func):
+        func.__semaphore__ = semaphore
+
+        def inner_wrapper(*args, **kwargs):
+            with func.__semaphore__:
+                return func(*args, **kwargs)
+        return inner_wrapper
+    return wrapper
 
 
 class EventRecords(metaclass=Singleton):
@@ -306,7 +318,7 @@ class Checker:
     """
 
     def __init__(self, collection_name=None, partition_name=None, shards_num=1, dim=768, insert_data=True,
-                 schema=None):
+                 schema=None, replica_number=1):
         self.recovery_time = 0
         self._succ = 0
         self._fail = 0
@@ -324,6 +336,7 @@ class Checker:
         c_name = collection_name if collection_name is not None else cf.gen_unique_str(
             'Checker_')
         self.c_name = c_name
+        self.replica_number = replica_number
         p_name = partition_name if partition_name is not None else "_default"
         self.p_name = p_name
         self.p_names = [self.p_name] if partition_name is not None else None
@@ -343,8 +356,9 @@ class Checker:
             log.info(f"collection {c_name} created, start to insert data")
             self.insert_data(nb=constants.ENTITIES_FOR_SEARCH)
         self.initial_entities = self.c_wrap.num_entities  # do as a flush
+        self.prepare()
 
-    @exception_handler()
+    @synchronized(sem)
     @retry(stop=stop_after_attempt(5), wait=wait_exponential(multiplier=1, min=4, max=10))
     def insert_data(self, nb=constants.ENTITIES_FOR_SEARCH, partition_name=None):
         partition_name = self.p_name if partition_name is None else partition_name
@@ -355,6 +369,32 @@ class Checker:
             timeout=timeout,
             enable_traceback=enable_traceback)
         log.info(f"insert {nb} data for collection {self.c_name} cost {time.perf_counter() - t0}s")
+
+    @synchronized(sem)
+    @retry(stop=stop_after_attempt(5), wait=wait_exponential(multiplier=1, min=4, max=10))
+    def prepare(self):
+        index_info = [x.to_dict() for x in self.c_wrap.indexes]
+        log.info(f"index info: {index_info}")
+        if len(index_info) == 0:
+            log.info(f"create index for collection {self.c_name} start")
+            res, result = self.c_wrap.create_index(self.float_vector_field_name,
+                                                   constants.DEFAULT_INDEX_PARAM,
+                                                   index_name=self.vec_index_name,
+                                                   timeout=timeout,
+                                                   enable_traceback=enable_traceback,
+                                                   check_task=CheckTasks.check_nothing)
+            if not result:
+                raise Exception("create index failed")
+            else:
+                log.info(f"create index for collection {self.c_name} finish")
+
+        log.info(f"load collection {self.c_name} start")
+        res, result = self.c_wrap.load(replica_number=self.replica_number)
+        if not result:
+            raise Exception("load collection failed")
+        else:
+            log.info(f"load collection {self.c_name} finish")
+
 
     def total(self):
         return self._succ + self._fail
@@ -579,15 +619,6 @@ class SearchChecker(Checker):
         if collection_name is None:
             collection_name = cf.gen_unique_str("SearchChecker_")
         super().__init__(collection_name=collection_name, shards_num=shards_num, schema=schema)
-        self.c_wrap.create_index(self.float_vector_field_name,
-                                 constants.DEFAULT_INDEX_PARAM,
-                                 index_name=self.vec_index_name,
-                                 timeout=timeout,
-                                 enable_traceback=enable_traceback,
-                                 check_task=CheckTasks.check_nothing)
-        # do load before search
-        self.c_wrap.load(replica_number=replica_number)
-        self.insert_data()
 
     @trace()
     def search(self):
@@ -1081,14 +1112,6 @@ class QueryChecker(Checker):
         if collection_name is None:
             collection_name = cf.gen_unique_str("QueryChecker_")
         super().__init__(collection_name=collection_name, shards_num=shards_num, schema=schema)
-        res, result = self.c_wrap.create_index(self.float_vector_field_name,
-                                               constants.DEFAULT_INDEX_PARAM,
-                                               index_name=self.vec_index_name,
-                                               timeout=timeout,
-                                               enable_traceback=enable_traceback,
-                                               check_task=CheckTasks.check_nothing)
-        self.c_wrap.load(replica_number=replica_number)  # do load before query
-        self.insert_data()
         self.term_expr = None
 
     @trace()
@@ -1119,14 +1142,6 @@ class DeleteChecker(Checker):
         if collection_name is None:
             collection_name = cf.gen_unique_str("DeleteChecker_")
         super().__init__(collection_name=collection_name, schema=schema)
-        res, result = self.c_wrap.create_index(self.float_vector_field_name,
-                                               constants.DEFAULT_INDEX_PARAM,
-                                               index_name=self.vec_index_name,
-                                               timeout=timeout,
-                                               enable_traceback=enable_traceback,
-                                               check_task=CheckTasks.check_nothing)
-        self.c_wrap.load()  # load before query
-        self.insert_data()
         term_expr = f'{self.int64_field_name} > 0'
         res, _ = self.c_wrap.query(term_expr, output_fields=[
             self.int64_field_name])
