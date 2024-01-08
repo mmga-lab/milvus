@@ -1147,6 +1147,10 @@ class DeleteChecker(Checker):
 
     @exception_handler()
     def run_task(self):
+        term_expr = f'{self.int64_field_name} > 0'
+        res, _ = self.c_wrap.query(term_expr, output_fields=[
+            self.int64_field_name])
+        self.ids = [r[self.int64_field_name] for r in res]
         delete_ids = self.ids.pop()
         self.expr = f'{self.int64_field_name} in {[delete_ids]}'
         res, result = self.delete_entities()
