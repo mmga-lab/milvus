@@ -97,19 +97,6 @@ class TestOperations(TestBase):
             log.info(f"start checker for collection name: {c_name}")
             op_checker = self.init_health_checkers(collection_name=c_name)
             all_checkers.append(op_checker)
-            # insert data in init stage
-            try:
-                num_entities = op_checker[Op.insert].c_wrap.num_entities
-                total_entities = 400000
-                if num_entities < total_entities:
-                    nb = 5000
-                    num_to_insert = total_entities - num_entities
-                    for i in range(num_to_insert//nb):
-                        op_checker[Op.insert].insert_data(nb=nb)
-                else:
-                    log.info(f"collection {c_name} has enough data {num_entities}, skip insert data")
-            except Exception as e:
-                log.error(f"insert data error: {e}")
         threads = []
         for i in range(collection_num):
             c_name = collection_name if collection_name else f"DB_{db_name}_Collection_{i}_Checker"
