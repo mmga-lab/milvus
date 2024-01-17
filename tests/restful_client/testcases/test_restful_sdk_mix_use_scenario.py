@@ -25,6 +25,12 @@ class TestRestfulSdkCompatibility(TestBase):
             FieldSchema(name="int64", dtype=DataType.INT64, is_primary=True),
             FieldSchema(name="float", dtype=DataType.FLOAT),
             FieldSchema(name="varchar", dtype=DataType.VARCHAR, max_length=65535),
+            FieldSchema(name="json", dtype=DataType.JSON),
+            FieldSchema(name="array_int", dtype=DataType.ARRAY, element_type=DataType.INT64, max_capacity=100),
+            FieldSchema(name="array_float", dtype=DataType.ARRAY, element_type=DataType.FLOAT, max_capacity=100),
+            FieldSchema(name="array_string", dtype=DataType.ARRAY, element_type=DataType.VARCHAR, max_length=65535,
+                        max_capacity=100),
+            FieldSchema(name="array_bool", dtype=DataType.ARRAY, element_type=DataType.BOOL, max_capacity=100),
             FieldSchema(name="float_vector", dtype=DataType.FLOAT_VECTOR, dim=dim)
         ]
         default_schema = CollectionSchema(fields=default_fields, description="test collection",
@@ -138,6 +144,11 @@ class TestRestfulSdkCompatibility(TestBase):
             FieldSchema(name="int64", dtype=DataType.INT64, is_primary=True),
             FieldSchema(name="float", dtype=DataType.FLOAT),
             FieldSchema(name="varchar", dtype=DataType.VARCHAR, max_length=65535),
+            FieldSchema(name="json", dtype=DataType.JSON),
+            FieldSchema(name="array_int", dtype=DataType.ARRAY, element_type=DataType.INT64, max_capacity=100),
+            FieldSchema(name="array_float", dtype=DataType.ARRAY, element_type=DataType.FLOAT, max_capacity=100),
+            FieldSchema(name="array_string", dtype=DataType.ARRAY, element_type=DataType.VARCHAR, max_length=65535, max_capacity=100),
+            FieldSchema(name="array_bool", dtype=DataType.ARRAY, element_type=DataType.BOOL, max_capacity=100),
             FieldSchema(name="float_vector", dtype=DataType.FLOAT_VECTOR, dim=128)
         ]
         default_schema = CollectionSchema(fields=default_fields, description="test collection",
@@ -149,7 +160,16 @@ class TestRestfulSdkCompatibility(TestBase):
         collection.load()
         # insert data by restful
         data = [
-            {"int64": i, "float": i, "varchar": str(i), "float_vector": [random.random() for _ in range(dim)], "age": i}
+            {"int64": i,
+             "float": i,
+             "varchar": str(i),
+             "json": {"age": i},
+             "array_int": [x for x in range(10)],
+             "array_float": [x for x in range(10)],
+             "array_string": [str(x) for x in range(10)],
+             "array_bool": [True, False],
+             "float_vector": [random.random() for _ in range(dim)],
+             "age": i}
             for i in range(nb)
         ]
         client = self.vector_client
