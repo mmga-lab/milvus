@@ -719,9 +719,9 @@ class ImportJobClient(Requests):
         res = response.json()
         return res
 
-    def get_import_job_progress(self, task_id):
+    def get_import_job_progress(self, job_id):
         payload = {
-            "taskID": task_id
+            "jobID": job_id
         }
         url = f'{self.endpoint}/v2/vectordb/jobs/import/get_progress'
         response = self.post(url, headers=self.update_headers(), data=payload)
