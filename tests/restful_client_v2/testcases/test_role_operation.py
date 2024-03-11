@@ -41,6 +41,7 @@ class TestRoleE2E(TestBase):
         assert role_name in rsp['data']
         # describe role
         rsp = self.role_client.role_describe(role_name)
+        assert rsp['code'] == 200
         # grant privilege to role
         payload = {
             "roleName": role_name,
@@ -49,6 +50,7 @@ class TestRoleE2E(TestBase):
             "privilege": "CreateCollection"
         }
         rsp = self.role_client.role_grant(payload)
+        assert rsp['code'] == 200
         # describe role after grant
         rsp = self.role_client.role_describe(role_name)
         privileges = []

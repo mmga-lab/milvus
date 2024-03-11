@@ -68,7 +68,7 @@ class TestBase(Base):
             self.partition_client.api_key = None
         connections.connect(uri=endpoint, token=token)
 
-    def init_collection(self, collection_name, pk_field="id", metric_type="L2", dim=128, nb=100, batch_size=1000):
+    def init_collection(self, collection_name, pk_field="id", metric_type="L2", dim=128, nb=100, batch_size=1000, return_insert_id=False):
         # create collection
         schema_payload = {
             "collectionName": collection_name,
@@ -85,6 +85,7 @@ class TestBase(Base):
         batch = nb // batch_size
         remainder = nb % batch_size
         data = []
+        insert_ids = []
         for i in range(batch):
             nb = batch_size
             data = get_data_by_payload(schema_payload, nb)
@@ -96,6 +97,8 @@ class TestBase(Base):
             logger.debug(f"body size: {body_size / 1024 / 1024} MB")
             rsp = self.vector_client.vector_insert(payload)
             assert rsp['code'] == 200
+            if return_insert_id:
+                insert_ids.extend(rsp['data']['insertIds'])
         # insert remainder data
         if remainder:
             nb = remainder
@@ -106,6 +109,10 @@ class TestBase(Base):
             }
             rsp = self.vector_client.vector_insert(payload)
             assert rsp['code'] == 200
+            if return_insert_id:
+                insert_ids.extend(rsp['data']['insertIds'])
+        if return_insert_id:
+            return schema_payload, data, insert_ids
 
         return schema_payload, data
 

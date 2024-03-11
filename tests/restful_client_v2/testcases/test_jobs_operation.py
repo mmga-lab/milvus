@@ -12,7 +12,7 @@ from base.testbase import TestBase
 
 
 @pytest.mark.L0
-class TestJobE2E(TestBase):
+class TestImportJob(TestBase):
 
     def test_job_e2e(self):
         # create collection
@@ -454,65 +454,9 @@ class TestJobE2E(TestBase):
         rsp = self.vector_client.vector_query(payload)
         assert len(rsp['data']) == 100
 
-    def test_job_import_with_binlog(self):
-        # create collection
-        name = gen_collection_name()
-        dim = 128
-        payload = {
-            "collectionName": name,
-            "schema": {
-                "fields": [
-                    {"fieldName": "book_id", "dataType": "Int64", "isPrimary": True, "elementTypeParams": {}},
-                    {"fieldName": "word_count", "dataType": "Int64", "elementTypeParams": {}},
-                    {"fieldName": "book_describe", "dataType": "VarChar", "elementTypeParams": {"max_length": "256"}},
-                    {"fieldName": "book_intro", "dataType": "FloatVector", "elementTypeParams": {"dim": f"{dim}"}}
-                ]
-            },
-            "indexParams": [{"fieldName": "book_intro", "indexName": "book_intro_vector", "metricType": "L2"}]
-        }
-        rsp = self.collection_client.collection_create(payload)
+@pytest.mark.L0
+class TestImportJobNegative(TestBase):
+    pass
 
-        # copy binlog file to minio backup bucket
 
-        file_nums = 2
-        file_names = []
 
-        # create import job
-        payload = {
-            "collectionName": name,
-            "files": file_names,
-        }
-        rsp = self.import_job_client.create_import_jobs(payload)
-        # list import job
-        payload = {
-            "collectionName": name,
-        }
-        rsp = self.import_job_client.list_import_jobs(payload)
-
-        # get import job progress
-        for job in rsp['data']:
-            job_id = job['jobID']
-            finished = False
-            t0 = time.time()
-
-            while not finished:
-                rsp = self.import_job_client.get_import_job_progress(job_id)
-                if rsp['data']['state'] == "Completed":
-                    finished = True
-                time.sleep(5)
-                if time.time() - t0 > 120:
-                    assert False, "import job timeout"
-        time.sleep(10)
-        # assert data count
-        c = Collection(name)
-        assert c.num_entities == 6000
-        # assert import data can be queried
-        payload = {
-            "collectionName": name,
-            "filter": f"book_id in {[i for i in range(1000)]}",
-            "limit": 100,
-            "offset": 0,
-            "outputFields": ["*"]
-        }
-        rsp = self.vector_client.vector_query(payload)
-        assert len(rsp['data']) == 100

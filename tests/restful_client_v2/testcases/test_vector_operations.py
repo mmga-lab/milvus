@@ -11,7 +11,7 @@ import pytest
 from base.testbase import TestBase
 from utils.utils import (gen_unique_str, get_data_by_payload, get_common_fields_by_data, gen_vector)
 from pymilvus import (
-    Collection, utility
+    Collection, utility, DataType
 )
 
 
@@ -1395,6 +1395,29 @@ class TestQueryVector(TestBase):
                 assert name.startswith(prefix)
 
 
+@pytest.mark.L1
+class TestQueryVectorNegative(TestBase):
+
+    def test_query_with_id_and_filter(self):
+        name = gen_collection_name()
+        self.name = name
+        nb = 200
+        dim = 128
+        schema_payload, data, insert_ids = self.init_collection(name, dim=dim, nb=nb, return_insert_id=True)
+        output_fields = get_common_fields_by_data(data)
+        uids = []
+        for item in data:
+            uids.append(item.get("uid"))
+        payload = {
+            "collectionName": name,
+            "outputFields": output_fields,
+            "filter": f"uid in {uids}",
+            "id": insert_ids,
+        }
+        rsp = self.vector_client.vector_query(payload)
+        assert rsp['code'] != 200
+
+
 @pytest.mark.L0
 class TestGetVector(TestBase):
 
@@ -1503,9 +1526,36 @@ class TestGetVector(TestBase):
 @pytest.mark.L0
 class TestDeleteVector(TestBase):
 
+    @pytest.mark.parametrize("id_field_type", ["list", "one"])
+    def test_delete_vector_by_pk_field_ids(self, id_field_type):
+        name = gen_collection_name()
+        self.name = name
+        nb = 200
+        dim = 128
+        schema_payload, data, insert_ids = self.init_collection(name, dim=dim, nb=nb, return_insert_id=True)
+        time.sleep(1)
+        id_to_delete = None
+        if id_field_type == "list":
+            id_to_delete = insert_ids
+        if id_field_type == "one":
+            id_to_delete = insert_ids[0]
+        payload = {
+            "collectionName": name,
+            "id": id_to_delete
+        }
+        rsp = self.vector_client.vector_delete(payload)
+        assert rsp['code'] == 200
+        # verify data deleted by get
+        payload = {
+            "collectionName": name,
+            "id": id_to_delete
+        }
+        rsp = self.vector_client.vector_get(payload)
+        assert len(rsp['data']) == 0
+
     @pytest.mark.parametrize("include_invalid_id", [True, False])
     @pytest.mark.parametrize("id_field_type", ["list", "one"])
-    def test_delete_vector_default(self, id_field_type, include_invalid_id):
+    def test_delete_vector_by_filter_pk_field(self, id_field_type, include_invalid_id):
         name = gen_collection_name()
         self.name = name
         nb = 200
@@ -1563,7 +1613,71 @@ class TestDeleteVector(TestBase):
         assert rsp['code'] == 200
         assert len(rsp['data']) == 0
 
-    def test_delete_vector_by_filter(self):
+    def test_delete_vector_by_custom_pk_field(self):
+        dim = 128
+        nb = 3000
+        insert_round = 1
+
+        name = gen_collection_name()
+        payload = {
+            "collectionName": name,
+            "schema": {
+                "fields": [
+                    {"fieldName": "book_id", "dataType": "Int64", "isPrimary": True, "elementTypeParams": {}},
+                    {"fieldName": "word_count", "dataType": "Int64", "elementTypeParams": {}},
+                    {"fieldName": "book_describe", "dataType": "VarChar", "elementTypeParams": {"maxLength": "256"}},
+                    {"fieldName": "text_emb", "dataType": "FloatVector", "elementTypeParams": {"dim": f"{dim}"}}
+                ]
+            },
+            "indexParams": [{"fieldName": "text_emb", "indexName": "text_emb_index", "metricType": "L2"}]
+        }
+        rsp = self.collection_client.collection_create(payload)
+        assert rsp['code'] == 200
+        rsp = self.collection_client.collection_describe(name)
+        logger.info(f"rsp: {rsp}")
+        assert rsp['code'] == 200
+        pk_values = []
+        # insert data
+        for i in range(insert_round):
+            data = []
+            for j in range(nb):
+                tmp = {
+                    "book_id": i * nb + j,
+                    "word_count": i * nb + j,
+                    "book_describe": f"book_{i * nb + j}",
+                    "text_emb": preprocessing.normalize([np.array([random.random() for i in range(dim)])])[0].tolist()
+                }
+                data.append(tmp)
+            payload = {
+                "collectionName": name,
+                "data": data,
+            }
+            tmp = [d["book_id"] for d in data]
+            pk_values.extend(tmp)
+            body_size = sys.getsizeof(json.dumps(payload))
+            logger.info(f"body size: {body_size / 1024 / 1024} MB")
+            rsp = self.vector_client.vector_insert(payload)
+            assert rsp['code'] == 200
+            assert rsp['data']['insertCount'] == nb
+        # query data before delete
+        c = Collection(name)
+        res = c.query(expr="", output_fields=["count(*)"])
+        logger.info(f"res: {res}")
+
+        # delete data
+        payload = {
+            "collectionName": name,
+            "id": pk_values,
+        }
+        rsp = self.vector_client.vector_delete(payload)
+
+        # query data after delete
+        time.sleep(1)
+        res = c.query(expr="", output_fields=["count(*)"])
+        logger.info(f"res: {res}")
+        assert res[0]["count(*)"] == 0
+
+    def test_delete_vector_by_filter_custom_field(self):
         dim = 128
         nb = 3000
         insert_round = 1
