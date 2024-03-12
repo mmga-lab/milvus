@@ -369,7 +369,7 @@ class TestUpsertVector(TestBase):
     @pytest.mark.parametrize("nb", [3000])
     @pytest.mark.parametrize("dim", [128])
     @pytest.mark.parametrize("id_type", ["Int64", "VarChar"])
-    def test_upsert_vector(self, nb, dim, insert_round, id_type):
+    def test_upsert_vector_default(self, nb, dim, insert_round, id_type):
         # create a collection
         name = gen_collection_name()
         payload = {
@@ -420,6 +420,90 @@ class TestUpsertVector(TestBase):
             for j in range(nb):
                 tmp = {
                     "book_id": i * nb + j if id_type == "Int64" else f"{i * nb + j}",
+                    "user_id": i * nb + j + 1,
+                    "word_count": i * nb + j + 2,
+                    "book_describe": f"book_{i * nb + j + 3}",
+                    "text_emb": preprocessing.normalize([np.array([random.random() for i in range(dim)])])[0].tolist()
+                }
+                data.append(tmp)
+            payload = {
+                "collectionName": name,
+                "data": data,
+            }
+            body_size = sys.getsizeof(json.dumps(payload))
+            logger.info(f"body size: {body_size / 1024 / 1024} MB")
+            rsp = self.vector_client.vector_upsert(payload)
+        # query data to make sure the data is updated
+        if id_type == "Int64":
+            rsp = self.vector_client.vector_query({"collectionName": name, "filter": "book_id > 0"})
+        if id_type == "VarChar":
+            rsp = self.vector_client.vector_query({"collectionName": name, "filter": "book_id > '0'"})
+        for data in rsp['data']:
+            assert data['user_id'] == int(data['book_id']) + 1
+            assert data['word_count'] == int(data['book_id']) + 2
+            assert data['book_describe'] == f"book_{int(data['book_id']) + 3}"
+        res = utility.get_query_segment_info(name)
+        logger.info(f"res: {res}")
+
+    @pytest.mark.parametrize("insert_round", [2])
+    @pytest.mark.parametrize("nb", [3000])
+    @pytest.mark.parametrize("dim", [128])
+    @pytest.mark.parametrize("id_type", ["Int64", "VarChar"])
+    @pytest.mark.xfail(reason="currently not support auto_id for upsert")
+    def test_upsert_vector_pk_auto_id(self, nb, dim, insert_round, id_type):
+        # create a collection
+        name = gen_collection_name()
+        payload = {
+            "collectionName": name,
+            "schema": {
+                "autoId": True,
+                "fields": [
+                    {"fieldName": "book_id", "dataType": f"{id_type}", "isPrimary": True, "elementTypeParams": {"max_length": "256"}},
+                    {"fieldName": "user_id", "dataType": "Int64", "isPartitionKey": True, "elementTypeParams": {}},
+                    {"fieldName": "word_count", "dataType": "Int64", "elementTypeParams": {}},
+                    {"fieldName": "book_describe", "dataType": "VarChar", "elementTypeParams": {"max_length": "256"}},
+                    {"fieldName": "text_emb", "dataType": "FloatVector", "elementTypeParams": {"dim": f"{dim}"}}
+                ]
+            },
+            "indexParams": [{"fieldName": "text_emb", "indexName": "text_emb_index", "metricType": "L2"}]
+        }
+        rsp = self.collection_client.collection_create(payload)
+        assert rsp['code'] == 200
+        rsp = self.collection_client.collection_describe(name)
+        logger.info(f"rsp: {rsp}")
+        assert rsp['code'] == 200
+        ids = []
+        # insert data
+        for i in range(insert_round):
+            data = []
+            for j in range(nb):
+                tmp = {
+                    "book_id": i * nb + j if id_type == "Int64" else f"{i * nb + j}",
+                    "user_id": i * nb + j,
+                    "word_count": i * nb + j,
+                    "book_describe": f"book_{i * nb + j}",
+                    "text_emb": preprocessing.normalize([np.array([random.random() for i in range(dim)])])[0].tolist()
+                }
+                data.append(tmp)
+            payload = {
+                "collectionName": name,
+                "data": data,
+            }
+            body_size = sys.getsizeof(json.dumps(payload))
+            logger.info(f"body size: {body_size / 1024 / 1024} MB")
+            rsp = self.vector_client.vector_insert(payload)
+            assert rsp['code'] == 200
+            assert rsp['data']['insertCount'] == nb
+            ids.extend(rsp['data']['insertIds'])
+            c = Collection(name)
+            c.flush()
+
+        # upsert data
+        for i in range(insert_round):
+            data = []
+            for j in range(nb):
+                tmp = {
+                    "book_id": ids[i * nb + j],
                     "user_id": i * nb + j + 1,
                     "word_count": i * nb + j + 2,
                     "book_describe": f"book_{i * nb + j + 3}",

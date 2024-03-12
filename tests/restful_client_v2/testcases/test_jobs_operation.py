@@ -52,7 +52,7 @@ class TestImportJob(TestBase):
         # create import job
         payload = {
             "collectionName": name,
-            "files": [file_name],
+            "files": [[file_name]],
         }
         rsp = self.import_job_client.create_import_jobs(payload)
         # list import job
@@ -63,13 +63,13 @@ class TestImportJob(TestBase):
 
         # get import job progress
         for task in rsp['data']:
-            task_id = task['taskID']
+            task_id = task['jobID']
             finished = False
             t0 = time.time()
 
             while not finished:
                 rsp = self.import_job_client.get_import_job_progress(task_id)
-                if rsp['data']['state'] == "ImportCompleted":
+                if rsp['data']['state'] == "Completed":
                     finished = True
                 time.sleep(5)
                 if time.time() - t0 > 120:
