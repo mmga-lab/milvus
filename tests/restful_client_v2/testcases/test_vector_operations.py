@@ -368,14 +368,15 @@ class TestUpsertVector(TestBase):
     @pytest.mark.parametrize("insert_round", [2])
     @pytest.mark.parametrize("nb", [3000])
     @pytest.mark.parametrize("dim", [128])
-    def test_upsert_vector(self, nb, dim, insert_round):
+    @pytest.mark.parametrize("id_type", ["Int64", "VarChar"])
+    def test_upsert_vector(self, nb, dim, insert_round, id_type):
         # create a collection
         name = gen_collection_name()
         payload = {
             "collectionName": name,
             "schema": {
                 "fields": [
-                    {"fieldName": "book_id", "dataType": "Int64", "isPrimary": True, "elementTypeParams": {}},
+                    {"fieldName": "book_id", "dataType": f"{id_type}", "isPrimary": True, "elementTypeParams": {"max_length": "256"}},
                     {"fieldName": "user_id", "dataType": "Int64", "isPartitionKey": True, "elementTypeParams": {}},
                     {"fieldName": "word_count", "dataType": "Int64", "elementTypeParams": {}},
                     {"fieldName": "book_describe", "dataType": "VarChar", "elementTypeParams": {"max_length": "256"}},
@@ -394,7 +395,7 @@ class TestUpsertVector(TestBase):
             data = []
             for j in range(nb):
                 tmp = {
-                    "book_id": i * nb + j,
+                    "book_id": i * nb + j if id_type == "Int64" else f"{i * nb + j}",
                     "user_id": i * nb + j,
                     "word_count": i * nb + j,
                     "book_describe": f"book_{i * nb + j}",
@@ -418,7 +419,7 @@ class TestUpsertVector(TestBase):
             data = []
             for j in range(nb):
                 tmp = {
-                    "book_id": i * nb + j,
+                    "book_id": i * nb + j if id_type == "Int64" else f"{i * nb + j}",
                     "user_id": i * nb + j + 1,
                     "word_count": i * nb + j + 2,
                     "book_describe": f"book_{i * nb + j + 3}",
@@ -433,11 +434,14 @@ class TestUpsertVector(TestBase):
             logger.info(f"body size: {body_size / 1024 / 1024} MB")
             rsp = self.vector_client.vector_upsert(payload)
         # query data to make sure the data is updated
-        rsp = self.vector_client.vector_query({"collectionName": name, "filter": "book_id > 0"})
+        if id_type == "Int64":
+            rsp = self.vector_client.vector_query({"collectionName": name, "filter": "book_id > 0"})
+        if id_type == "VarChar":
+            rsp = self.vector_client.vector_query({"collectionName": name, "filter": "book_id > '0'"})
         for data in rsp['data']:
-            assert data['user_id'] == data['book_id'] + 1
-            assert data['word_count'] == data['book_id'] + 2
-            assert data['book_describe'] == f"book_{data['book_id'] + 3}"
+            assert data['user_id'] == int(data['book_id']) + 1
+            assert data['word_count'] == int(data['book_id']) + 2
+            assert data['book_describe'] == f"book_{int(data['book_id']) + 3}"
         res = utility.get_query_segment_info(name)
         logger.info(f"res: {res}")
 
@@ -698,10 +702,13 @@ class TestSearchVector(TestBase):
             rsp = self.vector_client.vector_insert(payload)
             assert rsp['code'] == 200
             assert rsp['data']['insertCount'] == nb
+        # wait for index
+        rsp = self.index_client.index_describe(collection_name=name, index_name="binary_vector")
+
         # search data
         payload = {
             "collectionName": name,
-            "vector": [gen_vector(datatype="BinaryVector", dim=dim)],
+            "data": [gen_vector(datatype="BinaryVector", dim=dim)],
             "filter": "word_count > 100",
             "groupingField": "user_id",
             "outputFields": ["*"],
@@ -717,8 +724,6 @@ class TestSearchVector(TestBase):
         rsp = self.vector_client.vector_search(payload)
         assert rsp['code'] == 200
         assert len(rsp['data']) == 100
-
-
 
     @pytest.mark.parametrize("metric_type", ["IP", "L2"])
     def test_search_vector_with_simple_payload(self, metric_type):

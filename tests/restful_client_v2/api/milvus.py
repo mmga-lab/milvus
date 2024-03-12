@@ -5,7 +5,7 @@ import uuid
 from utils.util_log import test_log as logger
 from minio import Minio
 from minio.error import S3Error
-
+from minio.commonconfig import REPLACE, CopySource
 
 def logger_request_response(response, url, tt, headers, data, str_data, str_response, method):
     if len(data) > 2000:
@@ -746,5 +746,14 @@ class StorageClient():
     def upload_file(self, file_path, object_name):
         try:
             self.client.fput_object(self.bucket_name, object_name, file_path)
+        except S3Error as exc:
+            logger.error("fail to copy files to minio", exc)
+
+    def copy_file(self, src_bucket, src_object, dst_bucket, dst_object):
+        try:
+            # if dst bucket not exist, create it
+            if not self.client.bucket_exists(dst_bucket):
+                self.client.make_bucket(dst_bucket)
+            self.client.copy_object(dst_bucket, dst_object, CopySource(src_bucket, src_object))
         except S3Error as exc:
             logger.error("fail to copy files to minio", exc)

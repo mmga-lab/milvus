@@ -1,6 +1,7 @@
 import random
 import json
 import time
+from sklearn import preprocessing
 from pathlib import Path
 import pandas as pd
 import numpy as np
@@ -453,6 +454,114 @@ class TestImportJob(TestBase):
         }
         rsp = self.vector_client.vector_query(payload)
         assert len(rsp['data']) == 100
+
+
+    @pytest.mark.parametrize("insert_round", [1])
+    @pytest.mark.parametrize("auto_id", [True, False])
+    @pytest.mark.parametrize("is_partition_key", [True, False])
+    @pytest.mark.parametrize("enable_dynamic_schema", [True, False])
+    @pytest.mark.parametrize("nb", [3000])
+    @pytest.mark.parametrize("dim", [128])
+    def test_job_import_binlog_file_type(self, nb, dim, insert_round, auto_id,
+                                                      is_partition_key, enable_dynamic_schema):
+        # todo: copy binlog file to backup bucket
+        """
+        Insert a vector with a simple payload
+        """
+        # create a collection
+        name = gen_collection_name()
+        payload = {
+            "collectionName": name,
+            "schema": {
+                "autoId": auto_id,
+                "enableDynamicField": enable_dynamic_schema,
+                "fields": [
+                    {"fieldName": "book_id", "dataType": "Int64", "isPrimary": True, "elementTypeParams": {}},
+                    {"fieldName": "user_id", "dataType": "Int64", "isPartitionKey": is_partition_key,
+                     "elementTypeParams": {}},
+                    {"fieldName": "word_count", "dataType": "Int64", "elementTypeParams": {}},
+                    {"fieldName": "book_describe", "dataType": "VarChar", "elementTypeParams": {"max_length": "256"}},
+                    {"fieldName": "bool", "dataType": "Bool", "elementTypeParams": {}},
+                    {"fieldName": "json", "dataType": "JSON", "elementTypeParams": {}},
+                    {"fieldName": "int_array", "dataType": "Array", "elementDataType": "Int64",
+                     "elementTypeParams": {"max_capacity": "1024"}},
+                    {"fieldName": "varchar_array", "dataType": "Array", "elementDataType": "VarChar",
+                     "elementTypeParams": {"max_capacity": "1024", "max_length": "256"}},
+                    {"fieldName": "bool_array", "dataType": "Array", "elementDataType": "Bool",
+                     "elementTypeParams": {"max_capacity": "1024"}},
+                    {"fieldName": "text_emb", "dataType": "FloatVector", "elementTypeParams": {"dim": f"{dim}"}},
+                    {"fieldName": "image_emb", "dataType": "FloatVector", "elementTypeParams": {"dim": f"{dim}"}},
+                ]
+            },
+            "indexParams": [
+                {"fieldName": "text_emb", "indexName": "text_emb", "metricType": "L2"},
+                {"fieldName": "image_emb", "indexName": "image_emb", "metricType": "L2"}
+            ]
+        }
+        rsp = self.collection_client.collection_create(payload)
+        assert rsp['code'] == 200
+        rsp = self.collection_client.collection_describe(name)
+        logger.info(f"rsp: {rsp}")
+        assert rsp['code'] == 200
+        # insert data
+        for i in range(insert_round):
+            data = []
+            for i in range(nb):
+                if auto_id:
+                    tmp = {
+                        "user_id": i,
+                        "word_count": i,
+                        "book_describe": f"book_{i}",
+                        "bool": random.choice([True, False]),
+                        "json": {"key": i},
+                        "int_array": [i],
+                        "varchar_array": [f"varchar_{i}"],
+                        "bool_array": [random.choice([True, False])],
+                        "text_emb": preprocessing.normalize([np.array([random.random() for _ in range(dim)])])[
+                            0].tolist(),
+                        "image_emb": preprocessing.normalize([np.array([random.random() for _ in range(dim)])])[
+                            0].tolist(),
+                    }
+                else:
+                    tmp = {
+                        "book_id": i,
+                        "user_id": i,
+                        "word_count": i,
+                        "book_describe": f"book_{i}",
+                        "bool": random.choice([True, False]),
+                        "json": {"key": i},
+                        "int_array": [i],
+                        "varchar_array": [f"varchar_{i}"],
+                        "bool_array": [random.choice([True, False])],
+                        "text_emb": preprocessing.normalize([np.array([random.random() for _ in range(dim)])])[
+                            0].tolist(),
+                        "image_emb": preprocessing.normalize([np.array([random.random() for _ in range(dim)])])[
+                            0].tolist(),
+                    }
+                if enable_dynamic_schema:
+                    tmp.update({f"dynamic_field_{i}": i})
+                data.append(tmp)
+            payload = {
+                "collectionName": name,
+                "data": data,
+            }
+            rsp = self.vector_client.vector_insert(payload)
+            assert rsp['code'] == 200
+            assert rsp['data']['insertCount'] == nb
+        # query data to make sure the data is inserted
+        rsp = self.vector_client.vector_query({"collectionName": name, "filter": "user_id > 0", "limit": 50})
+        assert rsp['code'] == 200
+        assert len(rsp['data']) == 50
+        # get collection id
+        c = Collection(name)
+        res = c.describe()
+        collection_id = res["collection_id"]
+        # copy binlog to backup bucket
+        rsp = self.storage_client.copy_file("milvus-bucket", "file/", "binlog")
+
+
+
+
 
 @pytest.mark.L0
 class TestImportJobNegative(TestBase):
