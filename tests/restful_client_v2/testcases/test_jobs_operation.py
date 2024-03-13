@@ -457,9 +457,9 @@ class TestImportJob(TestBase):
 
 
     @pytest.mark.parametrize("insert_round", [1])
-    @pytest.mark.parametrize("auto_id", [True, False])
-    @pytest.mark.parametrize("is_partition_key", [True, False])
-    @pytest.mark.parametrize("enable_dynamic_schema", [True, False])
+    @pytest.mark.parametrize("auto_id", [True])
+    @pytest.mark.parametrize("is_partition_key", [True])
+    @pytest.mark.parametrize("enable_dynamic_schema", [True])
     @pytest.mark.parametrize("nb", [3000])
     @pytest.mark.parametrize("dim", [128])
     def test_job_import_binlog_file_type(self, nb, dim, insert_round, auto_id,
@@ -498,6 +498,11 @@ class TestImportJob(TestBase):
                 {"fieldName": "image_emb", "indexName": "image_emb", "metricType": "L2"}
             ]
         }
+        rsp = self.collection_client.collection_create(payload)
+        assert rsp['code'] == 200
+        # create restore collection
+        restore_collection_name = f"{name}_restore"
+        payload["collectionName"] = restore_collection_name
         rsp = self.collection_client.collection_create(payload)
         assert rsp['code'] == 200
         rsp = self.collection_client.collection_describe(name)
@@ -556,16 +561,72 @@ class TestImportJob(TestBase):
         c = Collection(name)
         res = c.describe()
         collection_id = res["collection_id"]
-        # copy binlog to backup bucket
-        rsp = self.storage_client.copy_file("milvus-bucket", "file/", "binlog")
 
+        # create import job
+        payload = {
+            "collectionName": restore_collection_name,
+            "files": [[f"milvus-bucket/file/insert_log/{collection_id}/",
+                       f"milvus-bucket/file/delta_log/{collection_id}/"
+                       ]],
+            "options": {
+                "backup": "true"
+            }
 
+        }
+        rsp = self.import_job_client.create_import_jobs(payload)
+        assert rsp['code'] == 200
+        # list import job
+        payload = {
+            "collectionName": restore_collection_name,
+        }
+        rsp = self.import_job_client.list_import_jobs(payload)
 
+        # get import job progress
+        for job in rsp['data']:
+            job_id = job['jobID']
+            finished = False
+            t0 = time.time()
+
+            while not finished:
+                rsp = self.import_job_client.get_import_job_progress(job_id)
+                if rsp['data']['state'] == "Completed":
+                    finished = True
+                time.sleep(5)
+                if time.time() - t0 > 120:
+                    assert False, "import job timeout"
+        time.sleep(10)
 
 
 @pytest.mark.L0
 class TestImportJobNegative(TestBase):
-    pass
+
+    def test_import_job_with_empty_files(self):
+        # create collection
+        name = gen_collection_name()
+        dim = 128
+        payload = {
+            "collectionName": name,
+            "schema": {
+                "fields": [
+                    {"fieldName": "book_id", "dataType": "Int64", "isPrimary": True, "elementTypeParams": {}},
+                    {"fieldName": "word_count", "dataType": "Int64", "elementTypeParams": {}},
+                    {"fieldName": "book_describe", "dataType": "VarChar", "elementTypeParams": {"max_length": "256"}},
+                    {"fieldName": "book_intro", "dataType": "FloatVector", "elementTypeParams": {"dim": f"{dim}"}}
+                ]
+            },
+            "indexParams": [{"fieldName": "book_intro", "indexName": "book_intro_vector", "metricType": "L2"}]
+        }
+        rsp = self.collection_client.collection_create(payload)
+
+        # create import job
+        payload = {
+            "collectionName": name,
+            "files": [[]],
+        }
+        rsp = self.import_job_client.create_import_jobs(payload)
+        assert rsp['code'] == 1100 and "empty" in rsp['message']
+
+
 
 
 

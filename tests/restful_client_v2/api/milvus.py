@@ -731,11 +731,12 @@ class ImportJobClient(Requests):
 
 class StorageClient():
 
-    def __init__(self, endpoint, access_key, secret_key, bucket_name):
+    def __init__(self, endpoint, access_key, secret_key, bucket_name, root_path="file"):
         self.endpoint = endpoint
         self.access_key = access_key
         self.secret_key = secret_key
         self.bucket_name = bucket_name
+        self.root_path = root_path
         self.client = Minio(
             self.endpoint,
             access_key=access_key,
@@ -757,3 +758,28 @@ class StorageClient():
             self.client.copy_object(dst_bucket, dst_object, CopySource(src_bucket, src_object))
         except S3Error as exc:
             logger.error("fail to copy files to minio", exc)
+
+    def get_collection_binlog(self, collection_id):
+        dir_list = [
+            "delta_log",
+            "insert_log"
+        ]
+        binlog_list = []
+        # list objects dir/collection_id in bucket
+        for dir in dir_list:
+            prefix = f"{self.root_path}/{dir}/{collection_id}/"
+            objects = self.client.list_objects(self.bucket_name, prefix=prefix)
+            for obj in objects:
+                binlog_list.append(f"{self.bucket_name}/{obj.object_name}")
+        print(binlog_list)
+        return binlog_list
+
+
+if __name__ == "__main__":
+    sc = StorageClient(
+        endpoint="10.104.19.57:9000",
+        access_key="minioadmin",
+        secret_key="minioadmin",
+        bucket_name="milvus-bucket"
+    )
+    sc.get_collection_binlog("448305293023730313")

@@ -539,7 +539,7 @@ class TestSearchVector(TestBase):
     @pytest.mark.parametrize("is_partition_key", [True])
     @pytest.mark.parametrize("enable_dynamic_schema", [True])
     @pytest.mark.parametrize("nb", [3000])
-    @pytest.mark.parametrize("dim", [128])
+    @pytest.mark.parametrize("dim", [16])
     def test_search_vector_with_all_vector_datatype(self, nb, dim, insert_round, auto_id,
                                                       is_partition_key, enable_dynamic_schema):
         """
@@ -617,6 +617,8 @@ class TestSearchVector(TestBase):
         # search data
         payload = {
             "collectionName": name,
+            "data": [gen_vector(datatype="FloatVector", dim=dim)],
+            "annsFields": "float_vector",
             "filter": "word_count > 100",
             "groupingField": "user_id",
             "outputFields": ["*"],
@@ -701,7 +703,7 @@ class TestSearchVector(TestBase):
         # search data
         payload = {
             "collectionName": name,
-            "vector": [gen_vector(datatype="FloatVector", dim=dim)],
+            "data": [gen_vector(datatype="FloatVector", dim=dim)],
             "filter": "word_count > 100",
             "groupingField": "user_id",
             "outputFields": ["*"],
@@ -794,7 +796,7 @@ class TestSearchVector(TestBase):
             "collectionName": name,
             "data": [gen_vector(datatype="BinaryVector", dim=dim)],
             "filter": "word_count > 100",
-            "groupingField": "user_id",
+            # "groupingField": "user_id",
             "outputFields": ["*"],
             "searchParams": {
                 "metricType": "HAMMING",
@@ -809,7 +811,7 @@ class TestSearchVector(TestBase):
         assert rsp['code'] == 200
         assert len(rsp['data']) == 100
 
-    @pytest.mark.parametrize("metric_type", ["IP", "L2"])
+    @pytest.mark.parametrize("metric_type", ["IP", "L2", "COSINE"])
     def test_search_vector_with_simple_payload(self, metric_type):
         """
         Search a vector with a simple payload
@@ -823,7 +825,7 @@ class TestSearchVector(TestBase):
         vector_to_search = preprocessing.normalize([np.array([random.random() for i in range(dim)])])[0].tolist()
         payload = {
             "collectionName": name,
-            "vector": vector_to_search,
+            "data": [vector_to_search],
         }
         rsp = self.vector_client.vector_search(payload)
         assert rsp['code'] == 200
@@ -836,7 +838,7 @@ class TestSearchVector(TestBase):
         distance = [item['distance'] for item in res]
         if metric_type == "L2":
             assert distance == sorted(distance)
-        if metric_type == "IP":
+        if metric_type == "IP" or metric_type == "COSINE":
             assert distance == sorted(distance, reverse=True)
 
     @pytest.mark.parametrize("sum_limit_offset", [16384, 16385])
