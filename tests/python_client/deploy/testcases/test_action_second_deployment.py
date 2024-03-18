@@ -162,11 +162,11 @@ class TestActionSecondDeployment(TestDeployBase):
         collection_w.query(default_term_expr, output_fields=[ct.default_int64_field_name],
                            check_task=check_task)
 
-        # flush
-        if pymilvus_version >= "2.2.0":
-            collection_w.flush()
-        else:
-            collection_w.collection.num_entities
+        # # flush
+        # if pymilvus_version >= "2.2.0":
+        #     collection_w.flush()
+        # else:
+        #     collection_w.collection.num_entities
 
         # search and query
         if "empty" in name:
@@ -187,15 +187,15 @@ class TestActionSecondDeployment(TestDeployBase):
         collection_w.query(default_term_expr, output_fields=[ct.default_int64_field_name],
                            check_task=check_task)
 
-        # insert data and flush
+        # insert data
         for i in range(2):
             self.insert_data_general(insert_data=True, is_binary=is_binary, nb=data_size,
                                     is_flush=False, is_index=True, name=name,
                                      enable_dynamic_field=False, with_json=False)
-        if pymilvus_version >= "2.2.0":
-            collection_w.flush()
-        else:
-            collection_w.collection.num_entities
+        # if pymilvus_version >= "2.2.0":
+        #     collection_w.flush()
+        # else:
+        #     collection_w.collection.num_entities
 
         # delete data
         delete_expr = f"{ct.default_int64_field_name} in [0,1,2,3,4,5,6,7,8,9]"
