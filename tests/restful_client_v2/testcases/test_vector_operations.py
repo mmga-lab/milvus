@@ -902,7 +902,7 @@ class TestSearchVector(TestBase):
         output_fields = get_common_fields_by_data(data, exclude_fields=[vector_field])
         payload = {
             "collectionName": name,
-            "vector": vector_to_search,
+            "data": vector_to_search,
             "outputFields": output_fields,
             "filter": "uid >= 0",
             "limit": limit,
