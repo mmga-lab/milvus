@@ -357,13 +357,13 @@ class Checker:
         self.scalar_field_names = cf.get_scalar_field_name_list(schema=schema)
         self.float_vector_field_names = cf.get_float_vec_field_name_list(schema=schema)
         self.binary_vector_field_names = cf.get_binary_vec_field_name_list(schema=schema)
-        # create index for scalar fields
-        for f in self.scalar_field_names:
-            self.c_wrap.create_index(f,
-                                     {"index_type": "INVERTED"},
-                                     timeout=timeout,
-                                     enable_traceback=enable_traceback,
-                                     check_task=CheckTasks.check_nothing)
+        # # create index for scalar fields
+        # for f in self.scalar_field_names:
+        #     self.c_wrap.create_index(f,
+        #                              {"index_type": "INVERTED"},
+        #                              timeout=timeout,
+        #                              enable_traceback=enable_traceback,
+        #                              check_task=CheckTasks.check_nothing)
         # create index for float vector fields
         for f in self.float_vector_field_names:
             self.c_wrap.create_index(f,
