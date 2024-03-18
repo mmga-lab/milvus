@@ -60,10 +60,12 @@ class TestCreateCollection(TestBase):
             "collectionName": name,
             "dimension": dim,
             "metricType": metric_type,
-            "primaryField": primary_field,
-            "vectorField": vector_field,
+            "primaryFieldName": primary_field,
+            "vectorFieldName": vector_field,
             "idType": id_type,
         }
+        if id_type == "VarChar":
+            collection_payload["params"] = {"max_length": "256"}
         rsp = self.collection_client.collection_create(collection_payload)
         assert rsp['code'] == 200
         rsp = self.collection_client.collection_describe(name)
@@ -92,15 +94,17 @@ class TestCreateCollection(TestBase):
         client = self.collection_client
         num_shards = 2
         num_partitions = 36
-        consistency_level = "STRONG"
+        consistency_level = "Strong"
         ttl_seconds = 360
         payload = {
             "collectionName": name,
             "enableDynamicField": True,
-            "numShards": num_shards,
-            "numPartitions": num_partitions,
-            "consistencyLevel": consistency_level,
-            "properties": {"collection.ttl.seconds": ttl_seconds},
+            "params":{
+                "shardsNum": f"{num_shards}",
+                "partitionsNum": f"{num_partitions}",
+                "consistencyLevel": f"{consistency_level}",
+                "ttlSeconds": f"{ttl_seconds}",
+            },
             "schema": {
                 "fields": [
                     {"fieldName": "book_id", "dataType": "Int64", "isPrimary": True, "elementTypeParams": {}},
@@ -130,12 +134,18 @@ class TestCreateCollection(TestBase):
         # describe collection
         time.sleep(10)
         rsp = client.collection_describe(name)
+        logger.info(f"describe collection: {rsp}")
+
+        ttl_seconds_actual = None
+        for d in rsp["data"]["properties"]:
+            if d["key"] == "collection.ttl.seconds":
+                ttl_seconds_actual = int(d["value"])
         assert rsp['code'] == 200
         assert rsp['data']['collectionName'] == name
-        assert rsp['data']['numShards'] == num_shards
-        assert rsp['data']['numPartitions'] == num_partitions
+        assert rsp['data']['shardsNum'] == num_shards
+        assert rsp['data']['partitionsNum'] == num_partitions
         assert rsp['data']['consistencyLevel'] == consistency_level
-        assert rsp['data']['properties']['collection.ttl.seconds'] == ttl_seconds
+        assert ttl_seconds_actual == ttl_seconds
 
 
     @pytest.mark.parametrize("auto_id", [True, False])
@@ -874,7 +884,7 @@ class TestDescribeCollection(TestBase):
 
         for field in rsp['data']['fields']:
             if field['name'] == "store_address":
-                assert field['PartitionKey'] is True
+                assert field['partitionKey'] is True
             if field['name'] == "reviewer_id":
                 assert field['primaryKey'] is True
         assert rsp['data']['autoId'] is False

@@ -136,6 +136,58 @@ class VectorClient(Requests):
 
         return response.json()
 
+    def vector_advanced_search(self, payload, db_name="default", timeout=10):
+        time.sleep(1)
+        url = f'{self.endpoint}/v2/vectordb/entities/advanced_search'
+        if self.db_name is not None:
+            payload["dbName"] = self.db_name
+        if db_name != "default":
+            payload["dbName"] = db_name
+        response = self.post(url, headers=self.update_headers(), data=payload)
+        rsp = response.json()
+        if "data" in rsp and len(rsp["data"]) == 0:
+            t0 = time.time()
+            while time.time() - t0 < timeout:
+                response = self.post(url, headers=self.update_headers(), data=payload)
+                rsp = response.json()
+                if len(rsp["data"]) > 0:
+                    break
+                time.sleep(1)
+            else:
+                response = self.post(url, headers=self.update_headers(), data=payload)
+                rsp = response.json()
+                if "data" in rsp and len(rsp["data"]) == 0:
+                    logger.info(f"after {timeout}s, still no data")
+
+        return response.json()
+
+    def vector_hybrid_search(self, payload, db_name="default", timeout=10):
+        time.sleep(1)
+        url = f'{self.endpoint}/v2/vectordb/entities/hybrid_search'
+        if self.db_name is not None:
+            payload["dbName"] = self.db_name
+        if db_name != "default":
+            payload["dbName"] = db_name
+        response = self.post(url, headers=self.update_headers(), data=payload)
+        rsp = response.json()
+        if "data" in rsp and len(rsp["data"]) == 0:
+            t0 = time.time()
+            while time.time() - t0 < timeout:
+                response = self.post(url, headers=self.update_headers(), data=payload)
+                rsp = response.json()
+                if len(rsp["data"]) > 0:
+                    break
+                time.sleep(1)
+            else:
+                response = self.post(url, headers=self.update_headers(), data=payload)
+                rsp = response.json()
+                if "data" in rsp and len(rsp["data"]) == 0:
+                    logger.info(f"after {timeout}s, still no data")
+
+        return response.json()
+
+
+
     def vector_query(self, payload, db_name="default", timeout=10):
         time.sleep(1)
         url = f'{self.endpoint}/v2/vectordb/entities/query'
@@ -706,27 +758,53 @@ class ImportJobClient(Requests):
         return headers
 
     def list_import_jobs(self, payload, db_name="default"):
+        if self.db_name is not None:
+            db_name = self.db_name
         payload["dbName"] = db_name
-        data = payload
+        if db_name is None:
+            payload.pop("dbName")
         url = f'{self.endpoint}/v2/vectordb/jobs/import/list'
-        response = self.post(url, headers=self.update_headers(), data=data)
-        res = response.json()
-        return res
-
-    def create_import_jobs(self, payload):
-        url = f'{self.endpoint}/v2/vectordb/jobs/import/create'
         response = self.post(url, headers=self.update_headers(), data=payload)
         res = response.json()
         return res
 
-    def get_import_job_progress(self, job_id):
+    def create_import_jobs(self, payload, db_name="default"):
+        if self.db_name is not None:
+            db_name = self.db_name
+        url = f'{self.endpoint}/v2/vectordb/jobs/import/create'
+        payload["dbName"] = db_name
+        response = self.post(url, headers=self.update_headers(), data=payload)
+        res = response.json()
+        return res
+
+    def get_import_job_progress(self, job_id, db_name="default"):
+        if self.db_name is not None:
+            db_name = self.db_name
         payload = {
+            "dbName": db_name,
             "jobID": job_id
         }
+        if db_name is None:
+            payload.pop("dbName")
+        if job_id is None:
+            payload.pop("jobID")
         url = f'{self.endpoint}/v2/vectordb/jobs/import/get_progress'
         response = self.post(url, headers=self.update_headers(), data=payload)
         res = response.json()
         return res
+
+    def wait_import_job_completed(self, job_id):
+        finished = False
+        t0 = time.time()
+        rsp = self.get_import_job_progress(job_id)
+        while not finished:
+            rsp = self.get_import_job_progress(job_id)
+            if rsp['data']['state'] == "Completed":
+                finished = True
+            time.sleep(5)
+            if time.time() - t0 > 120:
+                break
+        return rsp, finished
 
 
 class StorageClient():

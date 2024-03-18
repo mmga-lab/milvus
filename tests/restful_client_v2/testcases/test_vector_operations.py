@@ -11,7 +11,7 @@ import pytest
 from base.testbase import TestBase
 from utils.utils import (gen_unique_str, get_data_by_payload, get_common_fields_by_data, gen_vector)
 from pymilvus import (
-    Collection, utility, DataType
+    Collection, utility
 )
 
 
@@ -634,7 +634,6 @@ class TestSearchVector(TestBase):
         rsp = self.vector_client.vector_search(payload)
         assert rsp['code'] == 200
 
-
     @pytest.mark.parametrize("insert_round", [1])
     @pytest.mark.parametrize("auto_id", [True])
     @pytest.mark.parametrize("is_partition_key", [True])
@@ -722,7 +721,7 @@ class TestSearchVector(TestBase):
 
 
 
-    @pytest.mark.parametrize("insert_round", [1])
+    @pytest.mark.parametrize("insert_round", [2])
     @pytest.mark.parametrize("auto_id", [True])
     @pytest.mark.parametrize("is_partition_key", [True])
     @pytest.mark.parametrize("enable_dynamic_schema", [True])
@@ -788,6 +787,10 @@ class TestSearchVector(TestBase):
             rsp = self.vector_client.vector_insert(payload)
             assert rsp['code'] == 200
             assert rsp['data']['insertCount'] == nb
+        # flush data
+        c = Collection(name)
+        c.flush()
+        time.sleep(5)
         # wait for index
         rsp = self.index_client.index_describe(collection_name=name, index_name="binary_vector")
 
@@ -796,7 +799,6 @@ class TestSearchVector(TestBase):
             "collectionName": name,
             "data": [gen_vector(datatype="BinaryVector", dim=dim)],
             "filter": "word_count > 100",
-            # "groupingField": "user_id",
             "outputFields": ["*"],
             "searchParams": {
                 "metricType": "HAMMING",
@@ -1121,6 +1123,223 @@ class TestSearchVectorNegative(TestBase):
 
 
 @pytest.mark.L0
+class TestAdvancedSearchVector(TestBase):
+
+    @pytest.mark.parametrize("insert_round", [1])
+    @pytest.mark.parametrize("auto_id", [True])
+    @pytest.mark.parametrize("is_partition_key", [True])
+    @pytest.mark.parametrize("enable_dynamic_schema", [True])
+    @pytest.mark.parametrize("nb", [3000])
+    @pytest.mark.parametrize("dim", [2])
+    def test_advanced_search_vector_with_multi_float32_vector_datatype(self, nb, dim, insert_round, auto_id,
+                                                      is_partition_key, enable_dynamic_schema):
+        """
+        Insert a vector with a simple payload
+        """
+        # create a collection
+        name = gen_collection_name()
+        payload = {
+            "collectionName": name,
+            "schema": {
+                "autoId": auto_id,
+                "enableDynamicField": enable_dynamic_schema,
+                "fields": [
+                    {"fieldName": "book_id", "dataType": "Int64", "isPrimary": True, "elementTypeParams": {}},
+                    {"fieldName": "user_id", "dataType": "Int64", "isPartitionKey": is_partition_key,
+                     "elementTypeParams": {}},
+                    {"fieldName": "word_count", "dataType": "Int64", "elementTypeParams": {}},
+                    {"fieldName": "book_describe", "dataType": "VarChar", "elementTypeParams": {"max_length": "256"}},
+                    {"fieldName": "float_vector_1", "dataType": "FloatVector", "elementTypeParams": {"dim": f"{dim}"}},
+                    {"fieldName": "float_vector_2", "dataType": "FloatVector", "elementTypeParams": {"dim": f"{dim}"}},
+                ]
+            },
+            "indexParams": [
+                {"fieldName": "float_vector_1", "indexName": "float_vector_1", "metricType": "COSINE"},
+                {"fieldName": "float_vector_2", "indexName": "float_vector_2", "metricType": "COSINE"},
+
+            ]
+        }
+        rsp = self.collection_client.collection_create(payload)
+        assert rsp['code'] == 200
+        rsp = self.collection_client.collection_describe(name)
+        logger.info(f"rsp: {rsp}")
+        assert rsp['code'] == 200
+        # insert data
+        for i in range(insert_round):
+            data = []
+            for i in range(nb):
+                if auto_id:
+                    tmp = {
+                        "user_id": i%100,
+                        "word_count": i,
+                        "book_describe": f"book_{i}",
+                        "float_vector_1": gen_vector(datatype="FloatVector", dim=dim),
+                        "float_vector_2": gen_vector(datatype="FloatVector", dim=dim),
+                    }
+                else:
+                    tmp = {
+                        "book_id": i,
+                        "user_id": i%100,
+                        "word_count": i,
+                        "book_describe": f"book_{i}",
+                        "float_vector_1": gen_vector(datatype="FloatVector", dim=dim),
+                        "float_vector_2": gen_vector(datatype="FloatVector", dim=dim),
+
+                    }
+                if enable_dynamic_schema:
+                    tmp.update({f"dynamic_field_{i}": i})
+                data.append(tmp)
+            payload = {
+                "collectionName": name,
+                "data": data,
+            }
+            rsp = self.vector_client.vector_insert(payload)
+            assert rsp['code'] == 200
+            assert rsp['data']['insertCount'] == nb
+        # advanced search data
+
+        payload = {
+            "collectionName": name,
+            "search": [{
+                "data": [gen_vector(datatype="FloatVector", dim=dim)],
+                "annsField": "float_vector_1",
+                "limit": 10,
+                "outputFields": ["*"]
+            },
+                {
+                "data": [gen_vector(datatype="FloatVector", dim=dim)],
+                "annsField": "float_vector_2",
+                "limit": 10,
+                "outputFields": ["*"]
+                }
+
+            ],
+            "rerank": {
+                "strategy": "rrf",
+                "params": {
+                    "k": 10,
+                }
+            },
+            "limit": 10,
+            "outputFields": ["user_id", "word_count", "book_describe"]
+        }
+
+        rsp = self.vector_client.vector_advanced_search(payload)
+        assert rsp['code'] == 200
+        assert len(rsp['data']) == 10
+
+
+
+@pytest.mark.L0
+class TestHybridSearchVector(TestBase):
+
+    @pytest.mark.parametrize("insert_round", [1])
+    @pytest.mark.parametrize("auto_id", [True])
+    @pytest.mark.parametrize("is_partition_key", [True])
+    @pytest.mark.parametrize("enable_dynamic_schema", [True])
+    @pytest.mark.parametrize("nb", [3000])
+    @pytest.mark.parametrize("dim", [2])
+    def test_hybrid_search_vector_with_multi_float32_vector_datatype(self, nb, dim, insert_round, auto_id,
+                                                      is_partition_key, enable_dynamic_schema):
+        """
+        Insert a vector with a simple payload
+        """
+        # create a collection
+        name = gen_collection_name()
+        payload = {
+            "collectionName": name,
+            "schema": {
+                "autoId": auto_id,
+                "enableDynamicField": enable_dynamic_schema,
+                "fields": [
+                    {"fieldName": "book_id", "dataType": "Int64", "isPrimary": True, "elementTypeParams": {}},
+                    {"fieldName": "user_id", "dataType": "Int64", "isPartitionKey": is_partition_key,
+                     "elementTypeParams": {}},
+                    {"fieldName": "word_count", "dataType": "Int64", "elementTypeParams": {}},
+                    {"fieldName": "book_describe", "dataType": "VarChar", "elementTypeParams": {"max_length": "256"}},
+                    {"fieldName": "float_vector_1", "dataType": "FloatVector", "elementTypeParams": {"dim": f"{dim}"}},
+                    {"fieldName": "float_vector_2", "dataType": "FloatVector", "elementTypeParams": {"dim": f"{dim}"}},
+                ]
+            },
+            "indexParams": [
+                {"fieldName": "float_vector_1", "indexName": "float_vector_1", "metricType": "COSINE"},
+                {"fieldName": "float_vector_2", "indexName": "float_vector_2", "metricType": "COSINE"},
+
+            ]
+        }
+        rsp = self.collection_client.collection_create(payload)
+        assert rsp['code'] == 200
+        rsp = self.collection_client.collection_describe(name)
+        logger.info(f"rsp: {rsp}")
+        assert rsp['code'] == 200
+        # insert data
+        for i in range(insert_round):
+            data = []
+            for i in range(nb):
+                if auto_id:
+                    tmp = {
+                        "user_id": i%100,
+                        "word_count": i,
+                        "book_describe": f"book_{i}",
+                        "float_vector_1": gen_vector(datatype="FloatVector", dim=dim),
+                        "float_vector_2": gen_vector(datatype="FloatVector", dim=dim),
+                    }
+                else:
+                    tmp = {
+                        "book_id": i,
+                        "user_id": i%100,
+                        "word_count": i,
+                        "book_describe": f"book_{i}",
+                        "float_vector_1": gen_vector(datatype="FloatVector", dim=dim),
+                        "float_vector_2": gen_vector(datatype="FloatVector", dim=dim),
+
+                    }
+                if enable_dynamic_schema:
+                    tmp.update({f"dynamic_field_{i}": i})
+                data.append(tmp)
+            payload = {
+                "collectionName": name,
+                "data": data,
+            }
+            rsp = self.vector_client.vector_insert(payload)
+            assert rsp['code'] == 200
+            assert rsp['data']['insertCount'] == nb
+        # advanced search data
+
+        payload = {
+            "collectionName": name,
+            "search": [{
+                "data": [gen_vector(datatype="FloatVector", dim=dim)],
+                "annsField": "float_vector_1",
+                "limit": 10,
+                "outputFields": ["*"]
+            },
+                {
+                "data": [gen_vector(datatype="FloatVector", dim=dim)],
+                "annsField": "float_vector_2",
+                "limit": 10,
+                "outputFields": ["*"]
+                }
+
+            ],
+            "rerank": {
+                "strategy": "rrf",
+                "params": {
+                    "k": 10,
+                }
+            },
+            "limit": 10,
+            "outputFields": ["user_id", "word_count", "book_describe"]
+        }
+
+        rsp = self.vector_client.vector_hybrid_search(payload)
+        assert rsp['code'] == 200
+        assert len(rsp['data']) == 10
+
+
+
+
+@pytest.mark.L0
 class TestQueryVector(TestBase):
 
     @pytest.mark.parametrize("insert_round", [1])
@@ -1215,6 +1434,9 @@ class TestQueryVector(TestBase):
             assert rsp['code'] == 200
             assert rsp['data']['insertCount'] == nb
         # query data to make sure the data is inserted
+
+        rsp = self.vector_client.vector_query(payload)
+        assert rsp['code'] == 200
         # 1. query for int64
         payload = {
             "collectionName": name,
@@ -1391,6 +1613,24 @@ class TestQueryVector(TestBase):
             assert eval(expr) is True
             for field in output_fields:
                 assert field in r
+
+    def test_query_vector_with_count(self):
+        """
+        Query a vector with a simple payload
+        """
+        name = gen_collection_name()
+        self.name = name
+        self.init_collection(name, nb=3000)
+        # query for "count(*)"
+        payload = {
+            "collectionName": name,
+            "filter": " ",
+            "limit": 0,
+            "outputFields": ["count(*)"]
+        }
+        rsp = self.vector_client.vector_query(payload)
+        assert rsp['code'] == 200
+        assert rsp['data'][0]['count(*)'] == 3000
 
     @pytest.mark.parametrize("filter_expr", ["name > \"placeholder\"", "name like \"placeholder%\""])
     @pytest.mark.parametrize("include_output_fields", [True, False])
