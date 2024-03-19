@@ -877,7 +877,7 @@ def gen_data_by_type(field, nb=None, start=None):
     if data_type == DataType.VARCHAR:
         max_length = field.params['max_length']
         max_length = min(20, max_length-1)
-        length = random.randint(0, max_length)
+        length = random.randint(1, max_length)
         if nb is None:
             return "".join([chr(random.randint(97, 122)) for _ in range(length)])
         return ["".join([chr(random.randint(97, 122)) for _ in range(length)]) for _ in range(nb)]
