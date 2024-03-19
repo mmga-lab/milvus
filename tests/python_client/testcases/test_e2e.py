@@ -23,6 +23,22 @@ class TestE2e(TestcaseBase):
         entities = collection_w.num_entities
         log.info(f"assert create collection: {tt}, init_entities: {entities}")
 
+        # index
+        index_params = {"index_type": "IVF_SQ8", "params": {"nlist": 64}, "metric_type": "L2"}
+        t0 = time.time()
+        index, _ = collection_w.create_index(field_name=ct.default_float_vec_field_name,
+                                             index_params=index_params,
+                                             index_name=cf.gen_unique_str())
+        index, _ = collection_w.create_index(field_name=ct.default_string_field_name,
+                                             index_params={},
+                                             index_name=cf.gen_unique_str())
+        tt = time.time() - t0
+        log.info(f"assert index: {tt}")
+        assert len(collection_w.indexes) == 2
+
+        # load
+        collection_w.load()
+
         # insert
         data = cf.gen_default_list_data()
         t0 = time.time()
@@ -39,22 +55,6 @@ class TestE2e(TestcaseBase):
         tt = time.time() - t0
         entities = collection_w.num_entities
         log.info(f"assert flush: {tt}, entities: {entities}")
-
-        # index
-        index_params = {"index_type": "IVF_SQ8", "params": {"nlist": 64}, "metric_type": "L2"}
-        t0 = time.time()
-        index, _ = collection_w.create_index(field_name=ct.default_float_vec_field_name,
-                                             index_params=index_params,
-                                             index_name=cf.gen_unique_str())
-        index, _ = collection_w.create_index(field_name=ct.default_string_field_name,
-                                             index_params={},
-                                             index_name=cf.gen_unique_str())
-        tt = time.time() - t0
-        log.info(f"assert index: {tt}")
-        assert len(collection_w.indexes) == 2
-
-        # load
-        collection_w.load()
 
         # search
         search_vectors = cf.gen_vectors(1, ct.default_dim)
