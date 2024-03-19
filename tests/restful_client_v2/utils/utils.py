@@ -119,7 +119,7 @@ def get_data_by_payload(payload, nb=100):
     data = []
     if nb == 1:
         data = [{
-            pk_field: int(time.time()*1000),
+            pk_field: int(time.time()*10000),
             vector_field: preprocessing.normalize([np.array([random.random() for i in range(dim)])])[0].tolist(),
             **get_random_json_data()
 
@@ -127,7 +127,7 @@ def get_data_by_payload(payload, nb=100):
     else:
         for i in range(nb):
             data.append({
-                pk_field: int(time.time()*1000),
+                pk_field: int(time.time()*10000),
                 vector_field: preprocessing.normalize([np.array([random.random() for i in range(dim)])])[0].tolist(),
                 **get_random_json_data(uid=i)
             })

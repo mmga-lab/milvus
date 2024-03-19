@@ -191,7 +191,7 @@ class TestRestfulSdkCompatibility(TestBase):
         client = self.vector_client
         payload = {
             "collectionName": name,
-            "vector": [random.random() for _ in range(dim)],
+            "data": [[random.random() for _ in range(dim)]],
             "limit": 10
         }
         # search data by restful
@@ -316,7 +316,7 @@ class TestRestfulSdkCompatibility(TestBase):
             pk_id_list.append(item["int64"])
         payload = {
             "collectionName": name,
-            "id": pk_id_list
+            "filter": f"int64 in {pk_id_list}"
         }
         # delete data by restful
         rsp = self.vector_client.vector_delete(payload)

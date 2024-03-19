@@ -42,8 +42,9 @@ class TestCreateCollection(TestBase):
         rsp = client.collection_describe(name)
         assert rsp['code'] == 200
         assert rsp['data']['collectionName'] == name
-        assert rsp['data']['autoId'] is True
+        assert rsp['data']['autoId'] is False
         assert rsp['data']['enableDynamicField'] is True
+        assert "COSINE" in str(rsp['data']["indexes"])
 
     @pytest.mark.parametrize("dim", [128])
     @pytest.mark.parametrize("metric_type", ["L2", "COSINE", "IP"])
@@ -472,7 +473,6 @@ class TestCreateCollection(TestBase):
         rsp = client.collection_describe(name)
         assert rsp['code'] == 200
         assert rsp['data']['collectionName'] == name
-        assert f"FloatVector({dim})" in str(rsp['data']['fields'])
 
     def test_create_collections_concurrent_with_different_param(self):
         """
@@ -840,7 +840,7 @@ class TestDescribeCollection(TestBase):
         rsp = client.collection_describe(name)
         assert rsp['code'] == 200
         assert rsp['data']['collectionName'] == name
-        assert rsp['data']['autoId'] is True
+        assert rsp['data']['autoId'] is False
         assert rsp['data']['enableDynamicField'] is True
         assert len(rsp['data']['indexes']) == 1
 

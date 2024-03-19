@@ -11,7 +11,7 @@ from utils.utils import gen_collection_name
 from utils.util_log import test_log as logger
 import pytest
 from base.testbase import TestBase
-
+from uuid import uuid4
 
 @pytest.mark.L0
 class TestCreateImportJob(TestBase):
@@ -55,7 +55,7 @@ class TestCreateImportJob(TestBase):
                 tmp.update({f"dynamic_field_{i}": i})
             data.append(tmp)
         # dump data to file
-        file_name = f"bulk_insert_data_{int(time.time())}.json"
+        file_name = f"bulk_insert_data_{uuid4()}.json"
         file_path = f"/tmp/{file_name}"
         with open(file_path, "w") as f:
             json.dump(data, f)
@@ -349,7 +349,7 @@ class TestCreateImportJob(TestBase):
         rsp = self.import_job_client.list_import_jobs(payload)
 
         # get import job progress
-        for job in rsp['data']:
+        for job in rsp['data']["records"]:
             job_id = job['jobId']
             finished = False
             t0 = time.time()
@@ -429,7 +429,7 @@ class TestCreateImportJob(TestBase):
         rsp = self.import_job_client.list_import_jobs(payload)
 
         # get import job progress
-        for job in rsp['data']:
+        for job in rsp['data']["records"]:
             job_id = job['jobId']
             finished = False
             t0 = time.time()
@@ -638,7 +638,7 @@ class TestCreateImportJob(TestBase):
         rsp = self.import_job_client.list_import_jobs(payload)
 
         # get import job progress
-        for job in rsp['data']:
+        for job in rsp['data']["records"]:
             job_id = job['jobId']
             finished = False
             t0 = time.time()

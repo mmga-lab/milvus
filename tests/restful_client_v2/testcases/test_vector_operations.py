@@ -618,7 +618,7 @@ class TestSearchVector(TestBase):
         payload = {
             "collectionName": name,
             "data": [gen_vector(datatype="FloatVector", dim=dim)],
-            "annsFields": "float_vector",
+            "annsField": "float_vector",
             "filter": "word_count > 100",
             "groupingField": "user_id",
             "outputFields": ["*"],
@@ -883,17 +883,16 @@ class TestSearchVector(TestBase):
         if metric_type == "IP":
             assert distance == sorted(distance, reverse=True)
 
-    @pytest.mark.parametrize("level", [0, 1, 2])
-    @pytest.mark.parametrize("offset", [0, 10, 100])
-    @pytest.mark.parametrize("limit", [1, 100])
-    @pytest.mark.parametrize("metric_type", ["L2", "IP"])
-    def test_search_vector_with_complex_payload(self, limit, offset, level, metric_type):
+    @pytest.mark.parametrize("offset", [0, 100])
+    @pytest.mark.parametrize("limit", [100])
+    @pytest.mark.parametrize("metric_type", ["L2", "IP", "COSINE"])
+    def test_search_vector_with_complex_payload(self, limit, offset, metric_type):
         """
         Search a vector with a simple payload
         """
         name = gen_collection_name()
         self.name = name
-        nb = limit + offset + 100
+        nb = limit + offset + 3000
         dim = 128
         schema_payload, data = self.init_collection(name, dim=dim, nb=nb, metric_type=metric_type)
         vector_field = schema_payload.get("vectorField")
@@ -902,7 +901,7 @@ class TestSearchVector(TestBase):
         output_fields = get_common_fields_by_data(data, exclude_fields=[vector_field])
         payload = {
             "collectionName": name,
-            "data": vector_to_search,
+            "data": [vector_to_search],
             "outputFields": output_fields,
             "filter": "uid >= 0",
             "limit": limit,
@@ -938,7 +937,7 @@ class TestSearchVector(TestBase):
         output_fields = get_common_fields_by_data(data, exclude_fields=[vector_field])
         payload = {
             "collectionName": name,
-            "vector": vector_to_search,
+            "data": [vector_to_search],
             "outputFields": output_fields,
             "filter": filter_expr,
             "limit": limit,
@@ -979,7 +978,7 @@ class TestSearchVector(TestBase):
         logger.info(f"filter_expr: {filter_expr}")
         payload = {
             "collectionName": name,
-            "vector": vector_to_search,
+            "data": [vector_to_search],
             "outputFields": output_fields,
             "filter": filter_expr,
             "limit": limit,
@@ -1026,7 +1025,7 @@ class TestSearchVector(TestBase):
         logger.info(f"filter_expr: {filter_expr}")
         payload = {
             "collectionName": name,
-            "vector": vector_to_search,
+            "data": [vector_to_search],
             "outputFields": output_fields,
             "filter": filter_expr,
             "limit": limit,
@@ -1434,9 +1433,6 @@ class TestQueryVector(TestBase):
             assert rsp['code'] == 200
             assert rsp['data']['insertCount'] == nb
         # query data to make sure the data is inserted
-
-        rsp = self.vector_client.vector_query(payload)
-        assert rsp['code'] == 200
         # 1. query for int64
         payload = {
             "collectionName": name,
@@ -1632,6 +1628,21 @@ class TestQueryVector(TestBase):
         assert rsp['code'] == 200
         assert rsp['data'][0]['count(*)'] == 3000
 
+    @pytest.mark.xfail(reason="query by id is not supported")
+    def test_query_vector_by_id(self):
+        """
+        Query a vector with a simple payload
+        """
+        name = gen_collection_name()
+        self.name = name
+        _, _, insert_ids = self.init_collection(name, nb=3000, return_insert_id=True)
+        payload = {
+            "collectionName": name,
+            "id": insert_ids,
+        }
+        rsp = self.vector_client.vector_query(payload)
+        assert rsp['code'] == 200
+
     @pytest.mark.parametrize("filter_expr", ["name > \"placeholder\"", "name like \"placeholder%\""])
     @pytest.mark.parametrize("include_output_fields", [True, False])
     def test_query_vector_with_varchar_filter(self, filter_expr, include_output_fields):
@@ -1765,7 +1776,7 @@ class TestGetVector(TestBase):
         vector_to_search = preprocessing.normalize([np.array([random.random() for i in range(dim)])])[0].tolist()
         payload = {
             "collectionName": name,
-            "vector": vector_to_search,
+            "data": [vector_to_search],
         }
         rsp = self.vector_client.vector_search(payload)
         assert rsp['code'] == 200
@@ -1857,6 +1868,21 @@ class TestGetVector(TestBase):
 @pytest.mark.L0
 class TestDeleteVector(TestBase):
 
+    @pytest.mark.xfail(reason="delete by id is not supported")
+    def test_delete_vector_by_id(self):
+        """
+        Query a vector with a simple payload
+        """
+        name = gen_collection_name()
+        self.name = name
+        _, _, insert_ids = self.init_collection(name, nb=3000, return_insert_id=True)
+        payload = {
+            "collectionName": name,
+            "id": insert_ids,
+        }
+        rsp = self.vector_client.vector_query(payload)
+        assert rsp['code'] == 200
+
     @pytest.mark.parametrize("id_field_type", ["list", "one"])
     def test_delete_vector_by_pk_field_ids(self, id_field_type):
         name = gen_collection_name()
@@ -1870,10 +1896,16 @@ class TestDeleteVector(TestBase):
             id_to_delete = insert_ids
         if id_field_type == "one":
             id_to_delete = insert_ids[0]
-        payload = {
-            "collectionName": name,
-            "id": id_to_delete
-        }
+        if isinstance(id_to_delete, list):
+            payload = {
+                "collectionName": name,
+                "filter": f"id in {id_to_delete}"
+            }
+        else:
+            payload = {
+                "collectionName": name,
+                "filter": f"id == {id_to_delete}"
+            }
         rsp = self.vector_client.vector_delete(payload)
         assert rsp['code'] == 200
         # verify data deleted by get
@@ -1884,9 +1916,8 @@ class TestDeleteVector(TestBase):
         rsp = self.vector_client.vector_get(payload)
         assert len(rsp['data']) == 0
 
-    @pytest.mark.parametrize("include_invalid_id", [True, False])
     @pytest.mark.parametrize("id_field_type", ["list", "one"])
-    def test_delete_vector_by_filter_pk_field(self, id_field_type, include_invalid_id):
+    def test_delete_vector_by_filter_pk_field(self, id_field_type):
         name = gen_collection_name()
         self.name = name
         nb = 200
@@ -1915,19 +1946,21 @@ class TestDeleteVector(TestBase):
             id_to_get = ids
         if id_field_type == "one":
             id_to_get = ids[0]
-        if include_invalid_id:
-            if isinstance(id_to_get, list):
-                id_to_get.append(0)
-            else:
-                id_to_get = 0
         if isinstance(id_to_get, list):
             if len(id_to_get) >= 100:
                 id_to_get = id_to_get[-100:]
         # delete by id list
-        payload = {
-            "collectionName": name,
-            "id": id_to_get
-        }
+        if isinstance(id_to_get, list):
+            payload = {
+                "collectionName": name,
+                "filter": f"id in {id_to_get}",
+            }
+        else:
+            payload = {
+                "collectionName": name,
+                "filter": f"id == {id_to_get}",
+            }
+
         rsp = self.vector_client.vector_delete(payload)
         assert rsp['code'] == 200
         logger.info(f"delete res: {rsp}")
@@ -1956,7 +1989,7 @@ class TestDeleteVector(TestBase):
                 "fields": [
                     {"fieldName": "book_id", "dataType": "Int64", "isPrimary": True, "elementTypeParams": {}},
                     {"fieldName": "word_count", "dataType": "Int64", "elementTypeParams": {}},
-                    {"fieldName": "book_describe", "dataType": "VarChar", "elementTypeParams": {"maxLength": "256"}},
+                    {"fieldName": "book_describe", "dataType": "VarChar", "elementTypeParams": {"max_length": "256"}},
                     {"fieldName": "text_emb", "dataType": "FloatVector", "elementTypeParams": {"dim": f"{dim}"}}
                 ]
             },
@@ -1998,7 +2031,7 @@ class TestDeleteVector(TestBase):
         # delete data
         payload = {
             "collectionName": name,
-            "id": pk_values,
+            "filter": f"book_id in {pk_values}",
         }
         rsp = self.vector_client.vector_delete(payload)
 

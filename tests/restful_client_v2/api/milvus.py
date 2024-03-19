@@ -188,7 +188,7 @@ class VectorClient(Requests):
 
 
 
-    def vector_query(self, payload, db_name="default", timeout=10):
+    def vector_query(self, payload, db_name="default", timeout=5):
         time.sleep(1)
         url = f'{self.endpoint}/v2/vectordb/entities/query'
         if self.db_name is not None:
@@ -579,6 +579,7 @@ class RoleClient(Requests):
         self.api_key = token
         self.db_name = None
         self.headers = self.update_headers()
+        self.role_names = []
 
     def update_headers(self):
         headers = {
@@ -598,6 +599,8 @@ class RoleClient(Requests):
         url = f'{self.endpoint}/v2/vectordb/roles/create'
         response = self.post(url, headers=self.update_headers(), data=payload)
         res = response.json()
+        if res["code"] == 200:
+            self.role_names.append(payload["roleName"])
         return res
 
     def role_describe(self, role_name):
